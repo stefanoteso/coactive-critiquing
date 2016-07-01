@@ -122,7 +122,7 @@ def pp(problem, max_iters, features, update="perceptron", debug=False):
 
     return w, trace
 
-def critique_pp(problem, max_iters):
+def critique_pp(problem, max_iters, debug=False):
     """The Critiquing Preference Perceptron.
 
     Termination occurs when WRITEME
@@ -133,6 +133,8 @@ def critique_pp(problem, max_iters):
         The target problem.
     max_iters : positive int
         Number of iterations.
+    debug : bool, defaults to False
+        Whether to spew debug output.
 
     Returns
     -------
@@ -145,6 +147,18 @@ def critique_pp(problem, max_iters):
     num_features = len(features)
     r = problem.get_feature_radius()
 
+    if debug:
+        print(dedent("""\
+            PP: initialization
+
+            w*      = {}
+            x*      = {}
+            phi(x*) = {}
+            u(x*)   = {}
+        """).format(problem.w_star, problem.x_star,
+                    problem.phi(problem.x_star, features),
+                    problem.utility(problem.x_star, features)))
+
     w = np.ones(num_features) / np.sqrt(num_features)
     x = problem.infer(w, features)
 
@@ -154,6 +168,25 @@ def critique_pp(problem, max_iters):
         rho = problem.query_critique(x, features)
         if rho is None:
             x_bar = problem.query_improvement(x, features)
+
+            if debug:
+                print(dedent("""\
+                    PP: inference & improvement
+
+                    w          = {}
+
+                    x          = {}
+                    phi(x)     = {}
+                    u(x)       = {}
+
+                    x_bar      = {}
+                    phi(x_bar) = {}
+                    u(x_bar)   = {}
+                """).format(w, x, problem.phi(x, features),
+                            problem.utility(x, features),
+                            x_bar, problem.phi(x_bar, features),
+                            problem.utility(x_bar, features)))
+
             delta = problem.phi(x_bar, features) - \
                     problem.phi(x, features)
             w += delta
