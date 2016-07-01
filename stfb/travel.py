@@ -96,10 +96,6 @@ class TravelProblem(Problem):
         self._horizon = horizon
         num_attributes = 3 * horizon - 1
 
-        # TODO: sample from hierarchical sparse uniform*normal
-        # TODO: L1 SVM variant
-        # TODO: exponential update (also changes the bounds)
-
         # Generate the dataset
         # XXX ideally these would be provided externally
         self._location_activities = np.vstack([
@@ -148,8 +144,6 @@ class TravelProblem(Problem):
         num_features = num_base_features
 
         # Sample the weight vector
-        # XXX use a sparser laplacian
-        # XX make the weight vector consistent or 0 loss can not be reached!
         w_star = spnormal(num_features, rng=rng, dtype=np.float32)
 
         super().__init__(num_attributes, num_base_features, num_features,
