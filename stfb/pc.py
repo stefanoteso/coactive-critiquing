@@ -211,8 +211,6 @@ class PCProblem(Problem):
         assert num_features == j - 1
 
         # Sample the weight vector
-        # XXX use a sparser laplacian
-        # XX make the weight vector consistent or 0 loss can not be reached!
         w_star = spnormal(num_features, rng=rng, dtype=np.float32)
 
         super().__init__(num_attributes, num_base_features, num_features,
