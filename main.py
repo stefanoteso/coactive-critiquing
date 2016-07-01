@@ -43,6 +43,8 @@ def main():
                         help="maximum number of iterations")
     parser.add_argument("-n", "--num-attributes", type=int, default=10,
                         help="number of attributes, for problems that support it")
+    parser.add_argument("-u", "--update", type=str, default="perceptron",
+                        help="pp update type")
     parser.add_argument("-s", "--seed", type=int, default=0,
                         help="RNG seed")
     parser.add_argument("-v", "--verbose", action="store_true",
