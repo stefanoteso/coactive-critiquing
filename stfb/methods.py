@@ -35,7 +35,7 @@ def pp(problem, max_iters, features, update="perceptron"):
         List of feature indices to be used in the computations. "all" means all
         features (including latent ones), "attributes" means only
         attribute-level features.
-    update : str
+    update : str, defaults to "perceptron"
         Type of update to perform: "perceptron" and "exponentiated" are
         supported, see [1]_ for details.
 
