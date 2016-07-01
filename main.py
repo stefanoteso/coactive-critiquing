@@ -28,7 +28,7 @@ METHODS = {
                     debug=args.debug),
     "critique-pp":
         lambda args, problem:
-            stfb.critique_pp(problem, args.max_iters),
+            stfb.critique_pp(problem, args.max_iters, debug=args.debug),
 }
 
 def main():
