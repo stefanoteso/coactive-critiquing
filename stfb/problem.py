@@ -151,6 +151,12 @@ class Problem(object):
         """
         raise NotImplementedError()
 
+    def utility(self, x, features):
+        """Computes the utility of a configuration."""
+        assert x.shape == (self.num_attributes,)
+        w_star = self.w_star[self.enumerate_features(features)]
+        return w_star.dot(self.phi(x, features))
+
     def utility_loss(self, x, features):
         """Computes the utility loss.
 
@@ -166,12 +172,4 @@ class Problem(object):
         loss : non-negative float
             The utility loss of ``x``.
         """
-        assert x.shape == (self.num_attributes,)
-        w_star = self.w_star[self.enumerate_features(features)]
-        x_star = self.x_star
-        phi_star = self.phi(self.x_star, features)
-        phi = self.phi(x, features)
-        utility_star = w_star.dot(phi_star)
-        utility = w_star.dot(phi)
-        assert utility <= utility_star, "utility loss is b0rked"
-        return utility_star - utility
+        return self.utility(self.x_star, features) - self.utility(x, features)
