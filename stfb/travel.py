@@ -248,7 +248,7 @@ class TravelProblem(Problem):
 
     def query_critique(self, x, features):
         features = self.enumerate_features(features)
-        assert x.shape == (len(features),)
+        assert x.shape == (self.num_features,)
 
         # WRITEME
 
