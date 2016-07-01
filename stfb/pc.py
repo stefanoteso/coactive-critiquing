@@ -92,8 +92,11 @@ constraint x[7] = x_cost;
 
 bool: IS_IMPROVEMENT_QUERY;
 array[1..7] of float: INPUT_X;
+% NOTE we do not require the costs to coincide: cost is a dependent variable.
+% this also works around the difficulty of enforcing equality between floats
+% without running into unsats.
 constraint IS_IMPROVEMENT_QUERY ->
-    (sum(attr in 1..7)(bool2int(INPUT_X[attr] != x[attr])) <= 3);
+    (sum(attr in 1..6)(bool2int(INPUT_X[attr] != x[attr])) <= 3);
 
 array[FEATURES] of float: W;
 array[FEATURES] of var float: phi;
@@ -231,7 +234,6 @@ class PCProblem(Problem):
         with open(PATH, "wb") as fp:
             fp.write(problem.encode("utf-8"))
 
-        x_as_list = array_to_assignment(x, float)
         # XXX due to rounding errors, the last component of x (the PC cost)
         # ends up losing one tiny bit of precision; here we remove everything
         # below the resolution of 0.2
@@ -240,7 +242,12 @@ class PCProblem(Problem):
         data = {
             "NUM_FEATURES": len(features),
             "W": [0] * len(features), # doesn't matter
-            "x": array_to_assignment(x, float),
+            "x_type": int(x[0]),
+            "x_manufacturer": int(x[1]),
+            "x_cpu": int(x[2]),
+            "x_monitor": int(x[3]),
+            "x_ram": int(x[4]),
+            "x_hd": int(x[5]),
             "INPUT_X": [0, 0, 0, 0, 0, 0, 0], # doesn't matter
             "IS_IMPROVEMENT_QUERY": "false",
         }
