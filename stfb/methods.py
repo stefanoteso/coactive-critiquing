@@ -46,7 +46,7 @@ def pp(problem, max_iters, features, update="perceptron", debug=False):
     w : numpy.ndarray of shape (num_features,)
         The learned weights.
     trace : list of numpy.ndarray of shape (num_features,)
-        List of (w, x, time) pairs for all iterations.
+        List of (w, x, loss, time) pairs for all iterations.
 
     References
     ----------
@@ -133,52 +133,49 @@ def critique_pp(problem, max_iters):
         The target problem.
     max_iters : positive int
         Number of iterations.
-    features : list of indices, defaults to "all"
-        List of feature indices to be used in the computations. "all" means
-        all features (including latent ones), "attributes" means only
-        per-attribute identity features.
 
     Returns
     -------
     w : numpy.ndarray of shape (num_features,)
         The learned weights.
     trace : list of numpy.ndarray of shape (num_features,)
-        List of (w, x, time) pairs for all iterations.
+        List of (w, x, loss, time) pairs for all iterations.
     """
-    raise NotImplementedError()
+    features = list(range(problem.num_base_features))
+    num_features = len(features)
+    r = problem.get_feature_radius()
 
-#    features = list(range(problem.num_attributes))
-#    w = np.ones(problem.num_attributes)
-#    x = problem.infer(w, features=features)
-#
-#    trace = []
-#    for it in range(max_iters):
-#        t = time()
-#        rho = problem.query_critique(x, features=features)
-#        if rho is None:
-#            x_bar = problem.query_improvement(x, features=features)
-#            w += problem.phi(x_bar, features=features) - \
-#                 problem.phi(x, features=features)
-#            is_satisfied = (x == x_bar).all()
-#        else:
-#            features.append(rho)
-#            w = np.concatenate((w, [problem.get_feature_radius()]))
-#            is_satisfied = False
-#        t = time() - t
-#
-#        num_curr_features = len(features)
-#        num_features = problem.num_features
-#        loss = problem.utility_loss(x)
-#        print("{it:3d} | loss={loss} {t}s | m={num_curr_features}/{num_features}" \
-#                  .format(**locals()))
-#
-#        x = problem.infer(w, features=features)
-#        trace.append((w, x, t))
-#
-#        if is_satisfied:
-#            print("user is satisfied!")
-#            break
-#    else:
-#        print("user not satisfied, max iters reached!")
-#
-#    return w, trace
+    w = np.ones(num_features) / np.sqrt(num_features)
+    x = problem.infer(w, features)
+
+    trace = []
+    for it in range(max_iters):
+        t = time()
+        rho = problem.query_critique(x, features)
+        if rho is None:
+            x_bar = problem.query_improvement(x, features)
+            delta = problem.phi(x_bar, features) - \
+                    problem.phi(x, features)
+            w += delta
+            is_satisfied = (x == x_bar).all()
+        else:
+            w = np.concatenate((w, [r]))
+            features.append(rho)
+            is_satisfied = False
+        t = time() - t
+
+        num_features = len(features)
+        local_loss = problem.utility_loss(x, features)
+        global_loss = problem.utility_loss(x, "all")
+        print("{it:3d} | lloss={local_loss} gloss={global_loss} |phi|={num_features}  {t}s".format(**locals()))
+
+        x = problem.infer(w, features)
+        trace.append((w, x, global_loss, t))
+
+        if is_satisfied:
+            print("user is satisfied!")
+            break
+    else:
+        print("user not satisfied, max iters reached!")
+
+    return w, trace
