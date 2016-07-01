@@ -108,11 +108,12 @@ def pp(problem, max_iters, features, update="perceptron", debug=False):
 
         is_satisfied = (x == x_bar).all()
 
-        loss = problem.utility_loss(x, features)
-        print("{it:3d} | loss={loss} {t}s".format(**locals()))
+        local_loss = problem.utility_loss(x, features)
+        global_loss = problem.utility_loss(x, "all")
+        print("{it:3d} | lloss={local_loss} gloss={global_loss} |phi|={num_features}  {t}s".format(**locals()))
 
         x = problem.infer(w, features)
-        trace.append((w, x, loss, t))
+        trace.append((w, x, global_loss, t))
 
         if is_satisfied:
             print("user is satisfied!")
