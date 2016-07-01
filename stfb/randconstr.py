@@ -57,7 +57,7 @@ class RandConstrBoolProblem(Problem):
         for length in range(1, max_length + 1):
             for clique in combinations(attributes, length):
                 clause = " /\\ ".join(["x[{}]".format(i + 1) for i in clique])
-                feature = "constraint phi[{j}] = {clause};".format(**locals())
+                feature = "constraint phi[{j}] = ({clause});".format(**locals())
                 self.features.append(feature)
                 j += 1
         num_features = len(self.features)
@@ -98,7 +98,7 @@ class RandConstrBoolProblem(Problem):
         assert w.shape == (len(features),)
 
         if (w == 0).all():
-            raise RuntimeError("inference with w == 0 is undefined")
+            print("inference with w == 0")
 
         PATH = "rand-constr-bool-infer.mzn"
 
@@ -124,7 +124,7 @@ class RandConstrBoolProblem(Problem):
 
         w_star = self.w_star[features]
         if (w_star == 0).all():
-            raise RuntimeError("inference with w == 0 is undefined")
+            print("improvement query with w == 0")
 
         PATH = "rand-constr-bool-improve.mzn"
 
