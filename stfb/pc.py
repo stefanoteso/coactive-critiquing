@@ -156,14 +156,14 @@ class PCProblem(Problem):
     def __init__(self, rng=None):
         rng = check_random_state(rng)
 
-        BOOL_DOMAINS = {
-            "type":         list(range(1, 3+1)),
-            "manufacturer": list(range(1, 8+1)),
-            "cpu":          list(range(1, 37+1)),
-            "monitor":      list(range(1, 8+1)),
-            "ram":          list(range(1, 10+1)),
-            "hd":           list(range(1, 10+1)),
-        }
+        BOOL_DOMAINS = [
+            ("type",         list(range(1, 3+1))),
+            ("manufacturer", list(range(1, 8+1))),
+            ("cpu",          list(range(1, 37+1))),
+            ("monitor",      list(range(1, 8+1))),
+            ("ram",          list(range(1, 10+1))),
+            ("hd",           list(range(1, 10+1))),
+        ]
 
         # NOTE the maximum-cost feasible configuration has cost 2753.4
         COST_THRESHOLDS = np.arange(0, 2800, 100)
@@ -172,7 +172,7 @@ class PCProblem(Problem):
 
         # Attribute-level features
         j = 1
-        for attr, domain in BOOL_DOMAINS.items():
+        for attr, domain in BOOL_DOMAINS:
             for value in domain:
                 features = "constraint phi[{j}] = bool2float(x_{attr} = {value});" \
                                .format(**locals())
@@ -185,7 +185,7 @@ class PCProblem(Problem):
         num_base_features = j - 1
 
 #        # Horn-like features between boolean attr and bool subsets
-#        for head, body in product(BOOL_DOMAINS.items(), repeat=2):
+#        for head, body in product(BOOL_DOMAINS, repeat=2):
 #            head_attr, head_domain = head
 #            body_attr, body_domain = body
 #            if head_attr == body_attr:
@@ -201,7 +201,7 @@ class PCProblem(Problem):
 #                    j += 1
 
 #        # Enumerate all Horn rules bool attr -> cost threshold
-#        for head, threshold in product(BOOL_DOMAINS.items(), COST_THRESHOLDS):
+#        for head, threshold in product(BOOL_DOMAINS, COST_THRESHOLDS):
 #            head_attr, head_domain = head
 #            for head_value, op in product(head_domain, ["<=", ">="]):
 #                feature = "constraint phi[{j}] = bool2float(x_{head_attr} != {head_value} \/ x_cost {op} {threshold});" \
