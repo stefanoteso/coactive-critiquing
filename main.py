@@ -20,10 +20,12 @@ PROBLEMS = {
 METHODS = {
     "pp-attributes":
         lambda args, problem:
-            stfb.pp(problem, args.max_iters, "attributes", update=args.update),
+            stfb.pp(problem, args.max_iters, "attributes", update=args.update,
+                    debug=args.debug),
     "pp-all":
         lambda args, problem:
-            stfb.pp(problem, args.max_iters, "all", update=args.update),
+            stfb.pp(problem, args.max_iters, "all", update=args.update,
+                    debug=args.debug),
     "critique-pp":
         lambda args, problem:
             stfb.critique_pp(problem, args.max_iters),
@@ -48,6 +50,8 @@ def main():
                         help="pp update type")
     parser.add_argument("-s", "--seed", type=int, default=0,
                         help="RNG seed")
+    parser.add_argument("-d", "--debug", action="store_true",
+                        help="let structured feedback be verbose")
     parser.add_argument("-v", "--verbose", action="store_true",
                         help="let PyMzn be verbose")
     args = parser.parse_args()
