@@ -73,13 +73,13 @@ var MONITORS: x_monitor;
 var RAM: x_ram;
 var HD: x_hd;
 
-var float: x_cost =
+var float: x_cost = (1.0 / 2753.4) * (
     COST_TYPE[x_type] +
     COST_MANUFACTURER[x_manufacturer] +
     COST_CPU[x_cpu] +
     COST_MONITOR[x_monitor] +
     COST_RAM[x_ram] +
-    COST_HD[x_hd];
+    COST_HD[x_hd]);
 
 array[1..7] of var float: x;
 constraint x[1] = x_type;
