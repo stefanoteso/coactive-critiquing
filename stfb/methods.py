@@ -12,7 +12,9 @@ from textwrap import dedent
 # NOTE utility convergences, weights may not (especially when features are
 # discrete, and so the updates are discrete as well.)
 
-def pp(problem, max_iters, features):
+# TODO L1 SVM variant
+
+def pp(problem, max_iters, features, update="perceptron"):
     """The Preference Perceptron [1]_.
 
     Contrary to the original algorithm:
@@ -29,10 +31,13 @@ def pp(problem, max_iters, features):
         The target problem.
     max_iters : positive int
         Number of iterations.
-    features : list of indices, defaults to "all"
-        List of feature indices to be used in the computations. "all" means
-        all features (including latent ones), "attributes" means only
-        per-attribute identity features.
+    features : str or list of int
+        List of feature indices to be used in the computations. "all" means all
+        features (including latent ones), "attributes" means only
+        attribute-level features.
+    update : str
+        Type of update to perform: "perceptron" and "exponentiated" are
+        supported, see [1]_ for details.
 
     Returns
     -------
@@ -50,12 +55,21 @@ def pp(problem, max_iters, features):
     w = np.ones(num_features) / np.sqrt(num_features)
     x = problem.infer(w, features)
 
+    eta = 1.0 / (2 * problem.get_feature_radius() * np.sqrt(max_iters))
+
+    def rescale(w):
+        return w / np.sum(w)
+
     trace = []
     for it in range(max_iters):
         t = time()
         x_bar = problem.query_improvement(x, features)
-        w += problem.phi(x_bar, features) - \
-             problem.phi(x, features)
+        delta = problem.phi(x_bar, features) - \
+                problem.phi(x, features)
+        if update == "perceptron":
+            w += delta
+        elif update == "exponentiated":
+            w = rescale(w * np.exp(eta * delta))
         t = time() - t
 
         is_satisfied = (x == x_bar).all()
