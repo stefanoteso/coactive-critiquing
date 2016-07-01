@@ -20,10 +20,10 @@ PROBLEMS = {
 METHODS = {
     "pp-attributes":
         lambda args, problem:
-            stfb.pp(problem, args.max_iters, "attributes"),
+            stfb.pp(problem, args.max_iters, "attributes", update=args.update),
     "pp-all":
         lambda args, problem:
-            stfb.pp(problem, args.max_iters, "all"),
+            stfb.pp(problem, args.max_iters, "all", update=args.update),
     "critique-pp":
         lambda args, problem:
             stfb.critique_pp(problem, args.max_iters),
