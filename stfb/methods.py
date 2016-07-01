@@ -70,6 +70,8 @@ def pp(problem, max_iters, features, update="perceptron"):
             w += delta
         elif update == "exponentiated":
             w = rescale(w * np.exp(eta * delta))
+        else:
+            raise NotImplementedError()
         t = time() - t
 
         is_satisfied = (x == x_bar).all()
