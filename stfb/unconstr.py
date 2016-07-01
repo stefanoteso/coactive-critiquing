@@ -51,14 +51,18 @@ class UnconstrBoolProblem(Problem):
     def get_feature_radius(self):
         return 1.0
 
+    def _check_features(self, features):
+        return features in ("attributes", "all") or \
+               features == list(range(self.num_attributes))
+
     def phi(self, x, features):
         assert x.shape == (self.num_attributes,)
-        assert features in ("attributes", "all")
+        assert self._check_features(features)
         return x
 
     def infer(self, w, features):
         assert w.shape == (self.num_attributes,)
-        assert features in ("attributes", "all")
+        assert self._check_features(features)
 
         if (w == 0).all():
             raise RuntimeError("inference with w == 0 is undefined")
@@ -75,7 +79,7 @@ class UnconstrBoolProblem(Problem):
 
     def query_improvement(self, x, features):
         assert x.shape == (self.num_attributes,)
-        assert features in ("attributes", "all")
+        assert self._check_features(features)
 
         if (self.w_star == 0).all():
             raise RuntimeError("improvement with w_star == 0 is undefined")
