@@ -14,7 +14,7 @@ from textwrap import dedent
 
 # TODO L1 SVM variant
 
-def pp(problem, max_iters, features, update="perceptron"):
+def pp(problem, max_iters, features, update="perceptron", debug=False):
     """The Preference Perceptron [1]_.
 
     Contrary to the original algorithm:
@@ -38,6 +38,8 @@ def pp(problem, max_iters, features, update="perceptron"):
     update : str, defaults to "perceptron"
         Type of update to perform: "perceptron" and "exponentiated" are
         supported, see [1]_ for details.
+    debug : bool, defaults to False
+        Whether to spew debug output.
 
     Returns
     -------
@@ -52,6 +54,18 @@ def pp(problem, max_iters, features, update="perceptron"):
     """
     num_features = len(problem.enumerate_features(features))
 
+    if debug:
+        print(dedent("""\
+            PP: initialization
+
+            w*      = {}
+            x*      = {}
+            phi(x*) = {}
+            u(x*)   = {}
+        """).format(problem.w_star, problem.x_star,
+                    problem.phi(problem.x_star, features),
+                    problem.utility(problem.x_star, features)))
+
     w = np.ones(num_features) / np.sqrt(num_features)
     x = problem.infer(w, features)
 
@@ -64,6 +78,24 @@ def pp(problem, max_iters, features, update="perceptron"):
     for it in range(max_iters):
         t = time()
         x_bar = problem.query_improvement(x, features)
+        if debug:
+            print(dedent("""\
+                PP: inference & improvement
+
+                w          = {}
+
+                x          = {}
+                phi(x)     = {}
+                u(x)       = {}
+
+                x_bar      = {}
+                phi(x_bar) = {}
+                u(x_bar)   = {}
+            """).format(w, x, problem.phi(x, features),
+                        problem.utility(x, features),
+                        x_bar, problem.phi(x_bar, features),
+                        problem.utility(x_bar, features)))
+
         delta = problem.phi(x_bar, features) - \
                 problem.phi(x, features)
         if update == "perceptron":
