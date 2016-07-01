@@ -173,15 +173,5 @@ class Problem(object):
         phi = self.phi(x, features)
         utility_star = w_star.dot(phi_star)
         utility = w_star.dot(phi)
-#        print(dedent("""\
-#            x*   = {x_star}
-#            x    = {x}
-#
-#            phi* = {phi_star}
-#            phi  = {phi}
-#
-#            u*   = {utility_star}
-#            u    = {utility}
-#        """).format(**locals()))
         assert utility <= utility_star, "utility loss is b0rked"
         return utility_star - utility
