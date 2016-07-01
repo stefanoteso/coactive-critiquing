@@ -1,5 +1,6 @@
 from .methods import *
 from .problem import *
-from .synthetic import *
+from .unconstr import *
+from .randconstr import *
 from .pc import *
 from .travel import *
