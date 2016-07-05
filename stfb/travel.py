@@ -4,6 +4,7 @@ import numpy as np
 from pymzn import minizinc
 from itertools import product, combinations
 from sklearn.utils import check_random_state
+from textwrap import dedent
 
 from . import Problem, array_to_assignment, assignment_to_array, spnormal
 
@@ -60,7 +61,7 @@ constraint forall(i in 1..T-1 where location[i+1] != NO_LOCATION)(
     travel[i] >= TRAVEL_TIME[location[i], location[i+1]]);
 
 % configuration
-array[1..2*T+T-1] of var int: x;
+array[1..3*T-1] of var int: x;
 constraint forall(i in 1..T)(x[i] = location[i]);
 constraint forall(i in 1..T)(x[T+i] = duration[i]);
 constraint forall(i in 1..T-1)(x[2*T+i] = travel[i]);
@@ -106,8 +107,22 @@ class TravelProblem(Problem):
             rng.randint(1, 10, size=N_LOCATIONS),
             [0]
         ])
-        temp = rng.randint(1, 10, size=(N_LOCATIONS, N_LOCATIONS))
+        temp = rng.randint(1, 5, size=(N_LOCATIONS, N_LOCATIONS))
         self._travel_time = temp + temp.T
+
+        print(dedent("""\
+            TRAVEL DATASET:
+
+            location_activities =
+            {}
+
+            location_cost =
+            {}
+
+            travel_time =
+            {}
+        """).format(self._location_activities, self._location_cost,
+                    self._travel_time))
 
         # Generate the features
 
@@ -144,7 +159,7 @@ class TravelProblem(Problem):
         num_features = num_base_features
 
         # Sample the weight vector
-        w_star = spnormal(num_features, rng=rng, dtype=np.float32)
+        w_star = spnormal(num_features, sparsity=0.2, rng=rng, dtype=np.float32)
 
         super().__init__(num_attributes, num_base_features, num_features,
                          w_star)
