@@ -1,6 +1,7 @@
 #!/usr/bin/env python3
 
 import numpy as np
+import matplotlib.pyplot as plt
 import pymzn
 import stfb
 
@@ -30,6 +31,71 @@ METHODS = {
         lambda args, problem:
             stfb.critique_pp(problem, args.max_iters, debug=args.debug),
 }
+
+def _get_experiment_name(args):
+    return "_".join(map(str, [
+        args.problem, args.method, args.num_users, args.max_iters,
+        args.num_attributes, args.update, args.seed]))
+
+def _to_matrix(l, rows=None, cols=None):
+    if rows is None:
+        rows = len(l)
+    if cols is None:
+        cols = max(map(len, l))
+    m = np.zeros((rows, cols))
+    for i, x in enumerate(l):
+        m[i,:len(x)] = x
+    return m
+
+def _get_ticks(x):
+    return x / 10 # XXX
+    offset = np.floor(x / 10.0)
+    decimals = -np.log10(offset) + 1
+    return int(np.round(offset, decimals))
+
+def _draw_matrices(ax, matrices, cumulative=False):
+    max_x, max_y = None, None
+    for i, matrix in enumerate(matrices):
+
+        current_max_x = matrix.shape[1]
+        if max_x is None or current_max_x > max_x:
+            max_x = current_max_x
+
+        x = np.arange(current_max_x)
+
+        if cumulative:
+            matrix = matrix.cumsum(axis=1)
+
+        y = np.median(matrix, axis=0)
+        yerr = np.std(matrix, axis=0) / np.sqrt(matrix.shape[0])
+
+        current_max_y = max(y + yerr)
+        if max_y is None or current_max_y > max_y:
+            max_y = current_max_y
+
+        ax.plot(x, y, "o-", linewidth=2.5)
+        ax.fill_between(x, y - yerr, y + yerr, alpha=0.35, linewidth=0)
+
+    ax.set_xlim([0, max_x])
+    ax.set_ylim([0, max_y])
+
+    ax.set_xticks(np.arange(0, max_x, _get_ticks(max_x)))
+    ax.set_yticks(np.arange(0, max_y, _get_ticks(max_y)))
+
+def draw(basename, loss_matrix, time_matrix):
+    assert loss_matrix.shape == time_matrix.shape
+
+    fig, ax = plt.subplots(1, 1)
+    _draw_matrices(ax, [loss_matrix], cumulative=False)
+    ax.set_xlabel("Number of iterations")
+    ax.set_ylabel("Utility loss")
+    fig.savefig(basename + "_loss.png", bbox_inches="tight")
+
+    fig, ax = plt.subplots(1, 1)
+    _draw_matrices(ax, [loss_matrix], cumulative=True)
+    ax.set_xlabel("Number of iterations")
+    ax.set_ylabel("Cumulative time (seconds)")
+    fig.savefig(basename + "_time.png", bbox_inches="tight")
 
 def main():
     import argparse
@@ -65,12 +131,14 @@ def main():
         print("==== USER {}/{} ====".format(i, args.num_users))
         problem = PROBLEMS[args.problem](args, rng)
         _, trace = METHODS[args.method](args, problem)
-        _, xs, losses, times = zip(*trace)
+        _, _, losses, times = zip(*trace)
         all_losses.append(losses)
         all_times.append(times)
         print("\n\n")
 
-    # XXX the drawing code goes here
+    draw(_get_experiment_name(args),
+         _to_matrix(all_losses),
+         _to_matrix(all_times))
 
 if __name__ == "__main__":
     main()
