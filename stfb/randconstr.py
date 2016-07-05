@@ -8,11 +8,11 @@ from sklearn.utils import check_random_state
 from . import Problem, array_to_assignment, assignment_to_array, spnormal
 
 _TEMPLATE = """\
-int: NUM_ATTRIBUTES;
-set of int: ATTRIBUTES = 1..NUM_ATTRIBUTES;
+int: N_ATTRIBUTES;
+set of int: ATTRIBUTES = 1..N_ATTRIBUTES;
 
-int: NUM_FEATURES;
-set of int: FEATURES = 1..NUM_FEATURES;
+int: N_FEATURES;
+set of int: FEATURES = 1..N_FEATURES;
 
 array[FEATURES] of float: W;
 array[FEATURES] of var bool: phi;
@@ -82,8 +82,8 @@ class RandConstrBoolProblem(Problem):
             fp.write(_TEMPLATE.format(**locals()).encode("utf-8"))
 
         data = {
-            "NUM_ATTRIBUTES": self.num_attributes,
-            "NUM_FEATURES": len(features),
+            "N_ATTRIBUTES": self.num_attributes,
+            "N_FEATURES": len(features),
             "W": [0.0] * len(features),
             "x": array_to_assignment(x, bool),
             "INPUT_X": ["false"] * self.num_attributes,
@@ -108,8 +108,8 @@ class RandConstrBoolProblem(Problem):
             fp.write(_TEMPLATE.format(**locals()).encode("utf-8"))
 
         data = {
-            "NUM_ATTRIBUTES": self.num_attributes,
-            "NUM_FEATURES": len(features),
+            "N_ATTRIBUTES": self.num_attributes,
+            "N_FEATURES": len(features),
             "W": array_to_assignment(w, float),
             "INPUT_X": ["false"] * self.num_attributes, # doesn't matter
             "IS_IMPROVEMENT_QUERY": "false",
@@ -134,8 +134,8 @@ class RandConstrBoolProblem(Problem):
             fp.write(_TEMPLATE.format(**locals()).encode("utf-8"))
 
         data = {
-            "NUM_ATTRIBUTES": self.num_attributes,
-            "NUM_FEATURES": len(features),
+            "N_ATTRIBUTES": self.num_attributes,
+            "N_FEATURES": len(features),
             "W": array_to_assignment(w_star, float),
             "INPUT_X": array_to_assignment(x, bool),
             "IS_IMPROVEMENT_QUERY": "true",
@@ -146,8 +146,12 @@ class RandConstrBoolProblem(Problem):
 
     def query_critique(self, x, features):
         features = self.enumerate_features(features)
-        assert x.shape == (len(features),)
+        assert x.shape == (self.num_attributes,)
 
-        # WRITEME
+        w_star = self.w_star[features]
+        if (w_star == 0).all():
+            print("critique query with w == 0")
 
-        return None
+        latent_features = list(set(range(self.num_features)) - set(features))
+
+        raise NotImplementedError()
