@@ -57,12 +57,13 @@ def pp(problem, max_iters, features, update="perceptron", debug=False):
     if debug:
         print(dedent("""\
             PP: initialization
+            features = {}
 
             w*      = {}
             x*      = {}
             phi(x*) = {}
             u(x*)   = {}
-        """).format(problem.w_star, problem.x_star,
+        """).format(features, problem.w_star, problem.x_star,
                     problem.phi(problem.x_star, features),
                     problem.utility(problem.x_star, features)))
 
@@ -81,6 +82,7 @@ def pp(problem, max_iters, features, update="perceptron", debug=False):
         if debug:
             print(dedent("""\
                 PP: inference & improvement
+                features = {}
 
                 w          = {}
 
@@ -91,8 +93,8 @@ def pp(problem, max_iters, features, update="perceptron", debug=False):
                 x_bar      = {}
                 phi(x_bar) = {}
                 u(x_bar)   = {}
-            """).format(w, x, problem.phi(x, features),
-                        problem.utility(x, features),
+            """).format(features, w, x,
+                        problem.phi(x, features), problem.utility(x, features),
                         x_bar, problem.phi(x_bar, features),
                         problem.utility(x_bar, features)))
 
