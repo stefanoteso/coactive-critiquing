@@ -23,7 +23,7 @@ bool: IS_IMPROVEMENT_QUERY;
 
 {phis}
 
-constraint objective = sum(j in FEATURES)(W[j] * phi[j]);
+constraint objective = sum(j in FEATURES)(W[j] * (2 * bool2int(phi[j]) - 1));
 
 constraint IS_IMPROVEMENT_QUERY ->
     sum(i in ATTRIBUTES)(bool2int(x[i] != INPUT_X[i])) <= 3;
