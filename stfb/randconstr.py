@@ -179,4 +179,12 @@ class RandConstrBoolProblem(Problem):
         rho = np.nanargmin(scores)
         sign = np.sign(scores[rho])
 
+        x_bar = self.query_improvement(x, features)
+        u       = self.utility(x, "all")
+        u_bar   = self.utility(x_bar, "all")
+        u_star  = self.utility(self.x_star, "all")
+
+        if (u_bar - u) >= 0.1 * (u_star - u):
+            return None
+
         return sign * rho
