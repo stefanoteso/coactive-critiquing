@@ -5,7 +5,7 @@ from pymzn import minizinc
 from itertools import product, combinations
 from sklearn.utils import check_random_state
 
-from . import Problem, array_to_assignment, assignment_to_array, spnormal
+from . import Problem, array_to_assignment, assignment_to_array
 
 _TEMPLATE = """\
 int: N_ATTRIBUTES;
@@ -45,25 +45,39 @@ class RandConstrBoolProblem(Problem):
         Number of base attributes.
     max_length : positive int
         Maximum length of the clauses (features).
+    sparsity : float, defaults to 0.2
+        Percentage of non-zero weights.
     rng : None or int or numpy.random.RandomState, defaults to None
         The RNG.
     """
-    def __init__(self, num_attributes, max_length=3, rng=None):
+    def __init__(self, num_attributes, max_length=3, sparsity=0.2, rng=None):
         rng = check_random_state(rng)
 
-        # Enumerate all features (with attribute-level features first)
-        self.features, j = [], 1
+        # Enumerate the feature constraints
+        self.features, deps, j = [], [], 1
         attributes = list(range(num_attributes))
         for length in range(1, max_length + 1):
             for clique in combinations(attributes, length):
+                for attribute in clique:
+                    deps.append((j - 1, clique))
                 clause = " /\\ ".join(["x[{}]".format(i + 1) for i in clique])
                 feature = "constraint phi[{j}] = ({clause});".format(**locals())
                 self.features.append(feature)
                 j += 1
         num_features = len(self.features)
 
-        # Sample the weight vector
-        w_star = spnormal(num_features, rng=rng, dtype=np.float32)
+        # Sample w_star
+        num_nonzeros = max(1, int(np.rint(num_attributes * sparsity)))
+        nonzero_attributes = \
+            set(list(rng.permutation(num_attributes)[:num_nonzeros]))
+
+        nonzero_features = []
+        for j, clique in deps:
+            if set(clique) & nonzero_attributes:
+                nonzero_features.append(j)
+
+        w_star = np.zeros(num_features, dtype=np.float32)
+        w_star[nonzero_features] = rng.normal(0, 1, size=len(nonzero_features))
 
         super().__init__(num_attributes, num_attributes, num_features, w_star)
 
