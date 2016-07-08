@@ -8,7 +8,7 @@ import stfb
 PROBLEMS = {
     "rand-constr-bool":
         lambda args, rng:
-            stfb.RandConstrBoolProblem(args.num_attributes,
+            stfb.RandConstrBoolProblem(args.num_attributes, noise=args.noise,
                                        sparsity=args.sparsity, rng=rng),
     "pc":
         lambda args, rng: stfb.PCProblem(rng=rng),
@@ -112,6 +112,8 @@ def main():
                         help="number of attributes, for problems that support it")
     parser.add_argument("-u", "--update", type=str, default="perceptron",
                         help="pp update type")
+    parser.add_argument("-e", "--noise", type=float, default=0.1,
+                        help="amplitude of noise for improvement query")
     parser.add_argument("-S", "--sparsity", type=float, default=0.2,
                         help="percentage of non-zero weights")
     parser.add_argument("-s", "--seed", type=int, default=0,
