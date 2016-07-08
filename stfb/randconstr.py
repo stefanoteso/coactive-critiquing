@@ -170,10 +170,13 @@ class RandConstrBoolProblem(Problem):
         features = self.enumerate_features(features)
         assert x.shape == (self.num_attributes,)
 
-        w_star = self.w_star[features]
+        w_star = self.w_star
         if (w_star == 0).all():
             print("critique query with w == 0")
 
-        latent_features = list(set(range(self.num_features)) - set(features))
+        scores = w_star * self.phi(x, "all")
+        scores[features] = np.nan
+        rho = np.nanargmin(scores)
+        sign = np.sign(scores[rho])
 
-        raise NotImplementedError()
+        return sign * rho
