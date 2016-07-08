@@ -111,26 +111,29 @@ def pp(problem, max_iters, features, update="perceptron",
 
     num_features = len(problem.enumerate_features(features))
     w = np.ones(num_features) / np.sqrt(num_features)
-    x = problem.infer(w, features)
 
     trace = []
     for it in range(max_iters):
-        t = time()
+        t1 = time()
+        x = problem.infer(w, features)
+        t1 = time() - t1
+
         x_bar = problem.query_improvement(x, features)
+        is_satisfied = (x == x_bar).all()
 
         if debug:
             _print_iter_state(problem, w, x, x_bar, features)
 
+        t2 = time()
         w = update(w, x, x_bar, features)
-        t = time() - t
+        t2 = time() - t2
+
+        t = t1 + t2
 
         local_loss = problem.utility_loss(x, features)
         global_loss = problem.utility_loss(x, "all")
         print("{it:3d} | lloss={local_loss} gloss={global_loss} |phi|={num_features}  {t}s".format(**locals()))
 
-        is_satisfied = (x == x_bar).all()
-
-        x = problem.infer(w, features)
         trace.append((w, x, global_loss, t))
 
         if is_satisfied:
