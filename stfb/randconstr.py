@@ -49,11 +49,15 @@ class RandConstrBoolProblem(Problem):
         Maximum length of the clauses (features).
     sparsity : float, defaults to 0.2
         Percentage of non-zero weights.
+    noise : float, defaults to 0.1
+        Amplitude of normal noise applied to weights during improvement.
     rng : None or int or numpy.random.RandomState, defaults to None
         The RNG.
     """
-    def __init__(self, num_attributes, max_length=3, sparsity=0.2, rng=None):
+    def __init__(self, num_attributes, max_length=3, noise=0.1, sparsity=0.2,
+                 rng=None):
         rng = check_random_state(rng)
+        self.noise, self.rng = noise, rng
 
         # Enumerate the feature constraints
         self.features, deps, j = [], [], 1
@@ -141,6 +145,8 @@ class RandConstrBoolProblem(Problem):
         w_star = self.w_star[features]
         if (w_star == 0).all():
             print("improvement query with w == 0")
+        if self.noise > 0:
+            w_star += self.rng.normal(0, self.noise, size=w_star.shape[0]).astype(np.float32)
 
         PATH = "rand-constr-bool-improve.mzn"
 
