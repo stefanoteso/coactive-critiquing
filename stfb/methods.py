@@ -214,7 +214,8 @@ def critique_pp(problem, max_iters, debug=False):
             w += delta
             is_satisfied = (x == x_bar).all()
         else:
-            w = np.concatenate((w, [r]))
+            sign, rho = np.sign(rho), int(np.abs(rho))
+            w = np.concatenate((w, [-sign * r]))
             features.append(rho)
             is_satisfied = False
         t = time() - t
