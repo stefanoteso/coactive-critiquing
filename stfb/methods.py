@@ -12,9 +12,52 @@ from textwrap import dedent
 # NOTE utility convergences, weights may not (especially when features are
 # discrete, and so the updates are discrete as well.)
 
+# NOTE different configurations may have the same utility, so the termination
+# condition is looser than strictly required
+
 # TODO L1 SVM variant
 
-def pp(problem, max_iters, features, update="perceptron", debug=False):
+def _print_initial_state(problem, features):
+    w_star, x_star = problem.w_star, problem.x_star
+    phi_star = problem.phi(x_star, "all")
+    u_star = problem.utility(x_star, "all")
+    print(dedent("""\
+        INITIAL STATE
+        =============
+
+        w*      = {w_star}
+
+        x*      = {x_star}
+        phi*    = {phi_star}
+        gu*     = {u_star}
+        """).format(**locals()))
+
+def _print_iter_state(problem, w, x, x_bar, features):
+    phi = problem.phi(x, features)
+    phi_bar = problem.phi(x_bar, features)
+    u = problem.utility(x, features)
+    u_bar = problem.utility(x_bar, features)
+    print(dedent("""\
+        ITERATION
+        =========
+
+        features = {features}
+        w       = {w}
+
+        x       = {x}
+        phi     = {phi}
+        u       = {u}
+
+        x_bar   = {x_bar}
+        phi_bar = {phi_bar}
+        u_bar   = {u_bar}
+        """).format(**locals()))
+
+def _rescale(w):
+    return w / np.sum(w)
+
+def pp(problem, max_iters, features, update="perceptron",
+       debug=False):
     """The Preference Perceptron [1]_.
 
     Contrary to the original algorithm:
@@ -52,67 +95,40 @@ def pp(problem, max_iters, features, update="perceptron", debug=False):
     ----------
     .. [1] Shivaswamy and Joachims, *Coactive Learning*, JAIR 53 (2015)
     """
-    num_features = len(problem.enumerate_features(features))
-
     if debug:
-        print(dedent("""\
-            PP: initialization
-            features = {}
+        _print_initial_state(problem, features)
 
-            w*      = {}
-            x*      = {}
-            phi(x*) = {}
-            u(x*)   = {}
-        """).format(features, problem.w_star, problem.x_star,
-                    problem.phi(problem.x_star, features),
-                    problem.utility(problem.x_star, features)))
+    if update == "perceptron":
+        update = lambda w, x, x_bar, features: \
+            w + problem.phi(x_bar, features) - problem.phi(x, features)
+    elif update == "exp-perceptron":
 
+        eta = 1.0 / (problem.get_feature_radius() * np.sqrt(max_iters))
+        update = lambda w, x, x_bar, features: \
+            w * _rescale(np.exp(eta * (problem.phi(x_bar, features) - problem.phi(x, features))))
+    else:
+        raise ValueError("invalid update")
+
+    num_features = len(problem.enumerate_features(features))
     w = np.ones(num_features) / np.sqrt(num_features)
     x = problem.infer(w, features)
-
-    eta = 1.0 / (2 * problem.get_feature_radius() * np.sqrt(max_iters))
-
-    def rescale(w):
-        return w / np.sum(w)
 
     trace = []
     for it in range(max_iters):
         t = time()
         x_bar = problem.query_improvement(x, features)
+
         if debug:
-            print(dedent("""\
-                PP: inference & improvement
-                features = {}
+            _print_iter_state(problem, w, x, x_bar, features)
 
-                w          = {}
-
-                x          = {}
-                phi(x)     = {}
-                u(x)       = {}
-
-                x_bar      = {}
-                phi(x_bar) = {}
-                u(x_bar)   = {}
-            """).format(features, w, x,
-                        problem.phi(x, features), problem.utility(x, features),
-                        x_bar, problem.phi(x_bar, features),
-                        problem.utility(x_bar, features)))
-
-        delta = problem.phi(x_bar, features) - \
-                problem.phi(x, features)
-        if update == "perceptron":
-            w += delta
-        elif update == "exponentiated":
-            w = rescale(w * np.exp(eta * delta))
-        else:
-            raise NotImplementedError()
+        w = update(w, x, x_bar, features)
         t = time() - t
-
-        is_satisfied = (x == x_bar).all()
 
         local_loss = problem.utility_loss(x, features)
         global_loss = problem.utility_loss(x, "all")
         print("{it:3d} | lloss={local_loss} gloss={global_loss} |phi|={num_features}  {t}s".format(**locals()))
+
+        is_satisfied = (x == x_bar).all()
 
         x = problem.infer(w, features)
         trace.append((w, x, global_loss, t))
