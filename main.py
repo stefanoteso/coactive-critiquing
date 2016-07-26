@@ -6,7 +6,7 @@ import pymzn
 import stfb
 
 PROBLEMS = {
-    "rand-constr-bool":
+    "rand":
         lambda args, rng:
             stfb.RandConstrBoolProblem(args.num_attributes, noise=args.noise,
                                        sparsity=args.sparsity, rng=rng),
