@@ -1,7 +1,6 @@
 # -*- encoding: utf-8 -*-
 
 import numpy as np
-from pymzn import minizinc
 from itertools import combinations
 from sklearn.utils import check_random_state
 from textwrap import dedent
