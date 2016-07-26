@@ -102,8 +102,8 @@ def main():
     np.set_printoptions(threshold=np.nan, linewidth=180)
 
     parser = argparse.ArgumentParser(formatter_class=argparse.ArgumentDefaultsHelpFormatter)
-    parser.add_argument("problem", type=str, help="any of {}".format(PROBLEMS.keys()))
-    parser.add_argument("method", type=str, help="any of {}".format(METHODS.keys()))
+    parser.add_argument("problem", type=str, help="any of {}".format(list(PROBLEMS.keys())))
+    parser.add_argument("method", type=str, help="any of {}".format(list(METHODS.keys())))
     parser.add_argument("-U", "--num-users", type=int, default=10,
                         help="number of users to average over")
     parser.add_argument("-T", "--max-iters", type=int, default=100,
