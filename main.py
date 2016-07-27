@@ -75,7 +75,7 @@ def main():
     args = parser.parse_args()
 
     rng = np.random.RandomState(args.seed)
-    pymzn.verbose(args.verbose)
+    pymzn.debug(args.verbose)
 
     # Run the main loop
     all_losses, all_times = [], []
