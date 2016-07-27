@@ -8,8 +8,8 @@ import stfb
 PROBLEMS = {
     "rand":
         lambda args, rng:
-            stfb.RandConstrBoolProblem(args.num_attributes, noise=args.noise,
-                                       sparsity=args.sparsity, rng=rng),
+            stfb.RandProblem(args.num_attributes, noise=args.noise,
+                             sparsity=args.sparsity, rng=rng),
     "pc":
         lambda args, rng: stfb.PCProblem(rng=rng),
     "travel":

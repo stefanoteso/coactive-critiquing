@@ -36,7 +36,7 @@ _MINIMIZE = "solve maximize objective;"
 
 _FZN_FLAGS = {"parallel": 0}
 
-class RandConstrBoolProblem(Problem):
+class RandProblem(Problem):
     """A randomly-constrained Boolean problem.
 
     Constraints are conjunctions of attributes.
