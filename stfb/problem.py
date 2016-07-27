@@ -28,8 +28,8 @@ def array_to_assignment(array, kind=None):
 
 def assignment_to_array(assignment):
     array = np.zeros(len(assignment))
-    for i, v in assignment.items():
-        array[i - 1] = v
+    for i, v in enumerate(assignment):
+        array[i] = v
     return array
 
 class Problem(object):
