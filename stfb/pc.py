@@ -1,7 +1,7 @@
 # -*- encoding: utf-8 -*-
 
 import numpy as np
-from pymzn import minizinc, verbose
+from pymzn import minizinc
 from itertools import product, combinations
 from sklearn.utils import check_random_state
 
