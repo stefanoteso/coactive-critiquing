@@ -5,7 +5,7 @@ from pymzn import minizinc
 from itertools import product, combinations
 from sklearn.utils import check_random_state
 
-from . import Problem, array_to_assignment, assignment_to_array
+from . import Problem, array_to_assignment, assignment_to_array, sdepnormal
 
 _TEMPLATE = """\
 int: N_ATTRIBUTES;
@@ -57,7 +57,6 @@ class RandProblem(Problem):
         rng = check_random_state(rng)
         self.noise, self.rng = noise, rng
 
-        # Enumerate the feature constraints
         self.features, deps, j = [], [], 0
         attributes = list(range(num_attributes))
         for length in range(1, max_length + 1):
@@ -70,18 +69,8 @@ class RandProblem(Problem):
                 j += 1
         num_features = len(self.features)
 
-        # Sample w_star
-        num_nonzeros = max(1, int(np.rint(num_attributes * sparsity)))
-        nonzero_attributes = \
-            set(list(rng.permutation(num_attributes)[:num_nonzeros]))
-
-        nonzero_features = []
-        for j, clique in deps:
-            if set(clique) & nonzero_attributes:
-                nonzero_features.append(j)
-
-        w_star = np.zeros(num_features, dtype=np.float32)
-        w_star[nonzero_features] = rng.normal(0, 1, size=len(nonzero_features))
+        w_star = sdepnormal(num_attributes, num_features, deps,
+                            sparsity=sparsity, rng=rng, dtype=np.float32)
 
         super().__init__(num_attributes, num_attributes, num_features, w_star)
 
