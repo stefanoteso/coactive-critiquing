@@ -76,6 +76,10 @@ class Problem(object):
             return list(range(self.num_features))
         return features
 
+    def compute_best_configuration(self, features):
+        proj_w_star = self.w_star[self.enumerate_features(features)]
+        return self.infer(proj_w_star, features)
+
     def get_feature_radius(self):
         """Returns the radius of a single feature."""
         raise NotImplementedError()
