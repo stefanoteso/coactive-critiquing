@@ -81,17 +81,16 @@ var float: x_cost = (1.0 / 2753.4) * (
     COST_RAM[x_ram] +
     COST_HD[x_hd]);
 
-array[1..7] of var float: x;
+array[1..6] of var int: x;
 constraint x[1] = x_type;
 constraint x[2] = x_manufacturer;
 constraint x[3] = x_cpu;
 constraint x[4] = x_monitor;
 constraint x[5] = x_ram;
 constraint x[6] = x_hd;
-constraint x[7] = x_cost;
 
 bool: IS_IMPROVEMENT_QUERY;
-array[1..7] of float: INPUT_X;
+array[1..6] of int: INPUT_X;
 % NOTE we do not require the costs to coincide: cost is a dependent variable.
 % this also works around the difficulty of enforcing equality between floats
 % without running into unsats.
@@ -100,6 +99,8 @@ constraint IS_IMPROVEMENT_QUERY ->
 
 array[FEATURES] of float: W;
 array[FEATURES] of var float: phi;
+
+var float: objective = sum(feat in FEATURES)(W[feat] * phi[feat]);
 
 {phis}
 
@@ -150,7 +151,7 @@ constraint (x_type = 2 \/ x_type = 3) -> (x_monitor >= 7);
 """
 
 _SOLVE_PHI = "solve satisfy;"
-_SOLVE_INFER_IMPROVE = "solve maximize sum(feat in FEATURES)(W[feat] * phi[feat]);"
+_SOLVE_INFER_IMPROVE = "solve maximize objective;"
 
 class PCProblem(Problem):
     def __init__(self, rng=None):
@@ -184,21 +185,21 @@ class PCProblem(Problem):
 
         num_base_features = j - 1
 
-#        # Horn-like features between boolean attr and bool subsets
-#        for head, body in product(BOOL_DOMAINS, repeat=2):
-#            head_attr, head_domain = head
-#            body_attr, body_domain = body
-#            if head_attr == body_attr:
-#                continue
-#            for body_subset_size in range(1, 2):
-#                body_subsets = combinations(body_domain, body_subset_size)
-#                for head_value, body_subset in product(head_domain, body_subsets):
-#                    body = " \/ ".join(["x_{} = {}".format(body_attr, body_value)
-#                                        for body_value in body_subset])
-#                    feature = "constraint phi[{j}] = bool2float(x_{head_attr} != {head_value} \/ ({body}));" \
-#                                  .format(**locals())
-#                    self.features.append(feature)
-#                    j += 1
+        # Horn-like features between boolean attr and bool subsets
+        for head, body in product(BOOL_DOMAINS, repeat=2):
+            head_attr, head_domain = head
+            body_attr, body_domain = body
+            if head_attr == body_attr:
+                continue
+            for body_subset_size in range(1, 2):
+                body_subsets = combinations(body_domain, body_subset_size)
+                for head_value, body_subset in product(head_domain, body_subsets):
+                    body = " \/ ".join(["x_{} = {}".format(body_attr, body_value)
+                                        for body_value in body_subset])
+                    feature = "constraint phi[{j}] = bool2float(x_{head_attr} != {head_value} \/ ({body}));" \
+                                  .format(**locals())
+                    self.features.append(feature)
+                    j += 1
 
 #        # Enumerate all Horn rules bool attr -> cost threshold
 #        for head, threshold in product(BOOL_DOMAINS, COST_THRESHOLDS):
@@ -214,7 +215,10 @@ class PCProblem(Problem):
         assert num_features == j - 1
 
         # Sample the weight vector
-        w_star = spnormal(num_features, rng=rng, dtype=np.float32)
+        num_nonzeros = max(1, int(np.rint(num_features * 0.1)))
+        nonzeros = rng.permutation(num_features)[:num_nonzeros]
+        w_star = np.zeros(num_features, dtype=np.float32)
+        w_star[nonzeros] = rng.normal(0, 1, size=num_nonzeros)
 
         super().__init__(num_attributes, num_base_features, num_features,
                          w_star)
@@ -248,10 +252,10 @@ class PCProblem(Problem):
             "x_monitor": int(x[3]),
             "x_ram": int(x[4]),
             "x_hd": int(x[5]),
-            "INPUT_X": [0, 0, 0, 0, 0, 0, 0], # doesn't matter
+            "INPUT_X": [0, 0, 0, 0, 0, 0], # doesn't matter
             "IS_IMPROVEMENT_QUERY": "false",
         }
-        assignments = minizinc(PATH, data=data)
+        assignments = minizinc(PATH, data=data, keep=True, parallel=4, output_vars=["phi", "objective"])
 
         return assignment_to_array(assignments[0]["phi"])
 
@@ -273,10 +277,10 @@ class PCProblem(Problem):
         data = {
             "NUM_FEATURES": len(features),
             "W": array_to_assignment(w, float),
-            "INPUT_X": [0, 0, 0, 0, 0, 0, 0], # doesn't matter
+            "INPUT_X": [0, 0, 0, 0, 0, 0], # doesn't matter
             "IS_IMPROVEMENT_QUERY": "false",
         }
-        assignments = minizinc(PATH, data=data)
+        assignments = minizinc(PATH, data=data, keep=True, parallel=4, output_vars=["x", "objective"])
 
         return assignment_to_array(assignments[0]["x"])
 
@@ -299,10 +303,10 @@ class PCProblem(Problem):
         data = {
             "NUM_FEATURES": len(features),
             "W": array_to_assignment(w_star, float),
-            "INPUT_X": array_to_assignment(x, float),
+            "INPUT_X": array_to_assignment(x[:6], int),
             "IS_IMPROVEMENT_QUERY": "true",
         }
-        assignments = minizinc(PATH, data=data)
+        assignments = minizinc(PATH, data=data, keep=True, parallel=4, output_vars=["x", "objective"])
 
         x_bar = assignment_to_array(assignments[0]["x"])
         return x_bar
