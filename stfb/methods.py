@@ -130,9 +130,12 @@ def pp(problem, max_iters, features, update="perceptron",
 
         t = t1 + t2
 
+        local_x_star = problem.compute_best_configuration(features)
+        local_local_loss = problem.utility(local_x_star, features) - \
+                           problem.utility(x, features)
         local_loss = problem.utility_loss(x, features)
         global_loss = problem.utility_loss(x, "all")
-        print("{it:3d} | lloss={local_loss} gloss={global_loss} |phi|={num_features}  {t}s".format(**locals()))
+        print("{it:3d} | llloss={local_local_loss} lloss={local_loss} gloss={global_loss} |phi|={num_features}  {t}s".format(**locals()))
 
         trace.append((w, x, global_loss, t))
 
