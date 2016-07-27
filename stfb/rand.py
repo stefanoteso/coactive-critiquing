@@ -107,7 +107,7 @@ class RandProblem(Problem):
             "INPUT_X": ["false"] * self.num_attributes,
             "IS_IMPROVEMENT_QUERY": "false",
         }
-        assignments = minizinc(PATH, data=data)
+        assignments = minizinc(PATH, data=data, output_vars=["phi"])
 
         return assignment_to_array(assignments[0]["phi"])
 
@@ -132,7 +132,7 @@ class RandProblem(Problem):
             "INPUT_X": ["false"] * self.num_attributes, # doesn't matter
             "IS_IMPROVEMENT_QUERY": "false",
         }
-        assignments = minizinc(PATH, data=data)
+        assignments = minizinc(PATH, data=data, output_vars=["x"])
 
         return assignment_to_array(assignments[0]["x"])
 
@@ -160,7 +160,7 @@ class RandProblem(Problem):
             "INPUT_X": array_to_assignment(x, bool),
             "IS_IMPROVEMENT_QUERY": "true",
         }
-        assignments = minizinc(PATH, data=data)
+        assignments = minizinc(PATH, data=data, output_vars=["x"])
 
         return assignment_to_array(assignments[0]["x"])
 
