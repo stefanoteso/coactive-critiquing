@@ -34,8 +34,6 @@ constraint IS_IMPROVEMENT_QUERY ->
 _SATISFY = "solve satisfy;"
 _MINIMIZE = "solve maximize objective;"
 
-_FZN_FLAGS = {"parallel": 0}
-
 class RandProblem(Problem):
     """A randomly-constrained Boolean problem.
 
@@ -109,7 +107,7 @@ class RandProblem(Problem):
             "INPUT_X": ["false"] * self.num_attributes,
             "IS_IMPROVEMENT_QUERY": "false",
         }
-        assignments = minizinc(PATH, data=data, fzn_flags=_FZN_FLAGS)
+        assignments = minizinc(PATH, data=data)
 
         return assignment_to_array(assignments[0]["phi"])
 
@@ -134,7 +132,7 @@ class RandProblem(Problem):
             "INPUT_X": ["false"] * self.num_attributes, # doesn't matter
             "IS_IMPROVEMENT_QUERY": "false",
         }
-        assignments = minizinc(PATH, data=data, fzn_flags=_FZN_FLAGS)
+        assignments = minizinc(PATH, data=data)
 
         return assignment_to_array(assignments[0]["x"])
 
@@ -162,7 +160,7 @@ class RandProblem(Problem):
             "INPUT_X": array_to_assignment(x, bool),
             "IS_IMPROVEMENT_QUERY": "true",
         }
-        assignments = minizinc(PATH, data=data, fzn_flags=_FZN_FLAGS)
+        assignments = minizinc(PATH, data=data)
 
         return assignment_to_array(assignments[0]["x"])
 
