@@ -5,7 +5,7 @@ from pymzn import minizinc
 from itertools import product, combinations
 from sklearn.utils import check_random_state
 
-from . import Problem, array_to_assignment, assignment_to_array, spnormal
+from . import Problem, array_to_assignment, assignment_to_array
 
 _TEMPLATE = """\
 int: NUM_FEATURES;
