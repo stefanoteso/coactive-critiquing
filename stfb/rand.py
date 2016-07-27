@@ -58,14 +58,14 @@ class RandProblem(Problem):
         self.noise, self.rng = noise, rng
 
         # Enumerate the feature constraints
-        self.features, deps, j = [], [], 1
+        self.features, deps, j = [], [], 0
         attributes = list(range(num_attributes))
         for length in range(1, max_length + 1):
             for clique in combinations(attributes, length):
                 for attribute in clique:
-                    deps.append((j - 1, clique))
+                    deps.append((j, clique))
                 clause = " /\\ ".join(["x[{}]".format(i + 1) for i in clique])
-                feature = "constraint phi[{j}] = ({clause});".format(**locals())
+                feature = "constraint phi[{}] = ({});".format(j + 1, clause)
                 self.features.append(feature)
                 j += 1
         num_features = len(self.features)
