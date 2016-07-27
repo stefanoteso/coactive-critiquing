@@ -18,6 +18,31 @@ def spnormal(n, sparsity=0.1, rng=None, dtype=None):
     x[nonzeros] = rng.normal(0, 1, size=num_nonzeros)
     return x
 
+def sdepnormal(num_attributes, num_features, deps, sparsity=0.1, rng=None,
+               dtype=None):
+    """Samples from a 'sparse normal' distribution with dependent features.
+
+    First num_attributes * sparsity attributes are chosen as those that will
+    be non-zero. The non-zero features are taken to be those that depend on
+    the chosen non-zero attributes.
+
+    The dependency structure determines how many non-zero features there
+    will be.
+    """
+    rng = check_random_state(rng)
+
+    nnz_attributes = max(1, int(np.rint(num_attributes * sparsity)))
+    nz_attributes = set(list(rng.permutation(num_attributes)[:nnz_attributes]))
+
+    nz_features = []
+    for j, clique in deps:
+        if set(clique) & nz_attributes:
+            nz_features.append(j)
+
+    x = np.zeros(num_features, dtype=dtype)
+    x[nz_features] = rng.normal(0, 1, size=(len(nz_features)))
+    return x
+
 def array_to_assignment(array, kind=None):
     assert array.ndim == 1
     if kind is None:
