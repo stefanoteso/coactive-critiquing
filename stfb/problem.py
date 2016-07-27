@@ -5,19 +5,6 @@ from itertools import combinations
 from sklearn.utils import check_random_state
 from textwrap import dedent
 
-def spnormal(n, sparsity=0.1, rng=None, dtype=None):
-    """Samples from a 'sparse normal' distribution.
-
-    First n * sparsity elements out of n are chosen to be the nonzeros. Then
-    their value is sampled from a standard normal.
-    """
-    rng = check_random_state(rng)
-    num_nonzeros = max(1, int(np.rint(n * sparsity)))
-    nonzeros = rng.permutation(n)[:num_nonzeros]
-    x = np.zeros(n, dtype=dtype)
-    x[nonzeros] = rng.normal(0, 1, size=num_nonzeros)
-    return x
-
 def sdepnormal(num_attributes, num_features, deps, sparsity=0.1, rng=None,
                dtype=None):
     """Samples from a 'sparse normal' distribution with dependent features.
