@@ -169,8 +169,11 @@ class Problem(object):
     def utility(self, x, features):
         """Computes the utility of a configuration."""
         assert x.shape == (self.num_attributes,)
-        w_star = self.w_star[self.enumerate_features(features)]
-        return w_star.dot(self.phi(x, features))
+
+        targets = self.enumerate_features(features)
+        phi = self.phi(x, targets)
+
+        return np.dot(self.w_star[targets], phi[targets])
 
     def utility_loss(self, x, features):
         """Computes the utility loss.
