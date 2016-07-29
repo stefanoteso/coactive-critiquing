@@ -17,17 +17,15 @@ PROBLEMS = {
 }
 
 METHODS = {
-    "pp-attributes":
+    "pp-attr":
         lambda args, problem:
-            stfb.pp(problem, args.max_iters, "attributes", update=args.update,
-                    debug=args.debug),
+            stfb.pp(problem, args.max_iters, "attributes"),
     "pp-all":
         lambda args, problem:
-            stfb.pp(problem, args.max_iters, "all", update=args.update,
-                    debug=args.debug),
-    "critique-pp":
+            stfb.pp(problem, args.max_iters, "all"),
+    "cpp":
         lambda args, problem:
-            stfb.critique_pp(problem, args.max_iters, debug=args.debug),
+            stfb.cpp(problem, args.max_iters),
 }
 
 def _get_experiment_name(args):
@@ -82,8 +80,8 @@ def main():
     for i in range(args.num_users):
         print("==== USER {}/{} ====".format(i, args.num_users))
         problem = PROBLEMS[args.problem](args, rng)
-        _, trace = METHODS[args.method](args, problem)
-        _, _, losses, times = zip(*trace)
+        trace = METHODS[args.method](args, problem)
+        losses, times = zip(*trace)
         all_losses.append(losses)
         all_times.append(times)
         print("\n\n")
