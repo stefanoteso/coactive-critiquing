@@ -79,6 +79,10 @@ class Problem(object):
         self.x_star = self.infer(self.w_star, "all")
         assert self.x_star.shape == (num_attributes,), "inference is b0rked: {} != {}".format(self.x_star.shape, num_attributes)
 
+    def get_feature_radius(self):
+        """Returns the radius of a single feature."""
+        raise NotImplementedError()
+
     def enumerate_features(self, features):
         """Computes the index set of all features, handling the 'all' and
         'attributes' cases."""
@@ -87,14 +91,6 @@ class Problem(object):
         elif features == "all":
             return list(range(self.num_features))
         return features
-
-    def compute_best_configuration(self, features):
-        proj_w_star = self.w_star[self.enumerate_features(features)]
-        return self.infer(proj_w_star, features)
-
-    def get_feature_radius(self):
-        """Returns the radius of a single feature."""
-        raise NotImplementedError()
 
     def phi(self, x, features):
         """Computes the feature representation of x.
@@ -125,8 +121,31 @@ class Problem(object):
 
         Returns
         -------
-        x : numpy.ndarray of shape (num_features,)
+        x : numpy.ndarray of shape (num_attributes,)
             An optimal configuration.
+        """
+        raise NotImplementedError()
+
+    def compute_best_configuration(self, features):
+        proj_w_star = self.w_star[self.enumerate_features(features)]
+        return self.infer(proj_w_star, features)
+
+    def query_improvement(self, x, features):
+        """Searches for a local maximum utility modification.
+
+        If x is optimal, it may be returned unmodified.
+
+        Parameters
+        ----------
+        x : numpy.ndarray of shape (num_attributes,)
+            The configuration.
+        features : list or "all" or "attributes"
+            The features to be used in the computation.
+
+        Returns
+        -------
+        x_bar : numpy.ndarray of shape (n_attributes,)
+            The locally optimal modification.
         """
         raise NotImplementedError()
 
@@ -144,25 +163,6 @@ class Problem(object):
         -------
         feature : int or None
             The locally optimal critique feature or None if no critique.
-        """
-        raise NotImplementedError()
-
-    def query_improvement(self, x, features):
-        """Searches for a local maximum utility modification.
-
-        If x is optimal, it may be returned unmodified.
-
-        Parameters
-        ----------
-        x : numpy.ndarray of shape (num_attributes,)
-            The configuration.
-        features : list or "all" or "attributes"
-            The features to be used in the computation.
-
-        Returns
-        -------
-        x_bar : numpy.ndarray of shape (num_features,)
-            The locally optimal modification.
         """
         raise NotImplementedError()
 
