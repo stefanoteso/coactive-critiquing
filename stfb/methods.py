@@ -18,8 +18,8 @@ from textwrap import dedent
 
 # TODO the 'perturbed' pp algorithm is preferred for noisy users.
 
-def pp(problem, max_iters, targets="attributes"):
-    """The Preference Perceptron [1]_.
+def pp(problem, max_iters, targets="attributes", can_critique=False):
+    """The (Critiquing) Preference Perceptron [1]_.
 
     Contrary to the original algorithm:
     - There is no support for the "context" part.
@@ -35,10 +35,12 @@ def pp(problem, max_iters, targets="attributes"):
         The target problem.
     max_iters : positive int
         Number of iterations.
-    features : str or list of int
-        List of feature indices to be used in the computations. "all" means all
-        features (including latent ones), "attributes" means only
-        attribute-level features.
+    targets : str or list of int, defaults to "attributes"
+        Indices or description of features describing the configuration space.
+        "attributes" means only attribute-level features, "all" means all
+        possible features. The space may change when can_critique is True.
+    can_critique : bool, defaults to False
+        Whether critique queries are enabled.
 
     Returns
     -------
@@ -58,56 +60,14 @@ def pp(problem, max_iters, targets="attributes"):
     trace = []
     for it in range(max_iters):
         x = problem.infer(w, targets)
-        x_bar = problem.query_improvement(x, "all")
-        is_satisfied = (x == x_bar).all()
-        w += problem.phi(x_bar, targets) - problem.phi(x, targets)
 
-        lloss = problem.utility_loss(x, targets)
-        gloss = problem.utility_loss(x, "all")
+        if not can_critique:
+            rho, sign = None, None
+        else:
+            rho, sign = problem.query_critique(x, targets)
 
-        print(dedent("""\
-            {it:3d} : lloss={lloss} gloss={gloss} |phi|={num_targets}
-                x     = {x}
-                x_bar = {x_bar}
-                w     = {w}
-            """.format(**locals())))
-
-        trace.append((gloss, -1.0))
-        if is_satisfied:
-            print("user is satisfied!")
-            break
-
-    return trace
-
-def cpp(problem, max_iters):
-    """The Critiquing Preference Perceptron.
-
-    Termination occurs when WRITEME
-
-    Parameters
-    ----------
-    problem : Problem
-        The target problem.
-    max_iters : positive int
-        Number of iterations.
-
-    Returns
-    -------
-    trace : list of numpy.ndarray of shape (num_features,)
-        List of (loss, time) pairs for all iterations.
-    """
-    targets = problem.enumerate_features("attributes")
-    num_targets = len(targets)
-
-    w = np.zeros(problem.num_features, dtype=np.float32)
-    w[targets] = np.ones(num_targets) / np.sqrt(num_targets)
-
-    trace = []
-    for it in range(max_iters):
-        x = problem.infer(w, targets)
-        rho, sign = problem.query_critique(x, targets)
         if rho is None:
-            x_bar = problem.query_improvement(x, "all")
+            x_bar = problem.query_improvement(x, targets)
             w += problem.phi(x_bar, targets) - problem.phi(x, targets)
             is_satisfied = (x == x_bar).all()
         else:
@@ -118,6 +78,7 @@ def cpp(problem, max_iters):
         num_targets = len(targets)
         lloss = problem.utility_loss(x, targets)
         gloss = problem.utility_loss(x, "all")
+
         print("{it:3d} | lloss={lloss} gloss={gloss} |phi|={num_targets}" \
                   .format(**locals()))
 
@@ -125,5 +86,7 @@ def cpp(problem, max_iters):
         if is_satisfied:
             print("user is satisfied!")
             break
+    else:
+        print("user not satisfied, iterations elapsed")
 
     return trace
