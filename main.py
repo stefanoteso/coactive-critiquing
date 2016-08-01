@@ -19,13 +19,14 @@ PROBLEMS = {
 METHODS = {
     "pp-attr":
         lambda args, problem:
-            stfb.pp(problem, args.max_iters, "attributes"),
+            stfb.pp(problem, args.max_iters, targets="attributes"),
     "pp-all":
         lambda args, problem:
-            stfb.pp(problem, args.max_iters, "all"),
+            stfb.pp(problem, args.max_iters, targets="all"),
     "cpp":
         lambda args, problem:
-            stfb.cpp(problem, args.max_iters),
+            stfb.pp(problem, args.max_iters, targets="attributes",
+                    can_critique=True),
 }
 
 def _get_experiment_name(args):
