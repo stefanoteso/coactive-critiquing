@@ -48,7 +48,7 @@ def main():
     import argparse
 
     np.seterr(all="raise")
-    np.set_printoptions(threshold=np.nan, linewidth=180)
+    np.set_printoptions(precision=3, threshold=np.nan, linewidth=180)
 
     parser = argparse.ArgumentParser(formatter_class=argparse.ArgumentDefaultsHelpFormatter)
     parser.add_argument("problem", type=str, help="any of {}".format(list(PROBLEMS.keys())))
