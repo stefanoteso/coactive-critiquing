@@ -10,6 +10,9 @@ PROBLEMS = {
         lambda args, rng:
             stfb.RandProblem(args.num_attributes, noise=args.noise,
                              sparsity=args.sparsity, rng=rng),
+    "contrand":
+        lambda args, rng:
+            stfb.ContRandProblem(args.num_attributes, rng=rng),
     "pc":
         lambda args, rng: stfb.PCProblem(rng=rng),
     "travel":
