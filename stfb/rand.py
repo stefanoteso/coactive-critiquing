@@ -14,6 +14,8 @@ set of int: ATTRIBUTES = 1..N_ATTRIBUTES;
 int: N_FEATURES;
 set of int: FEATURES = 1..N_FEATURES;
 
+set of int: ACTIVE_FEATURES;
+
 array[FEATURES] of float: W;
 array[FEATURES] of var bool: phi;
 array[ATTRIBUTES] of bool: INPUT_X;
@@ -32,7 +34,7 @@ constraint IS_IMPROVEMENT_QUERY ->
 """
 
 _SATISFY = "solve satisfy;"
-_MINIMIZE = "solve maximize objective;"
+_MAXIMIZE = "solve maximize objective;"
 
 class RandProblem(Problem):
     """A randomly-constrained Boolean problem.
@@ -57,17 +59,21 @@ class RandProblem(Problem):
         rng = check_random_state(rng)
         self.noise, self.rng = noise, rng
 
-        self.features, deps, j = [], [], 0
         attributes = list(range(num_attributes))
+
+        self.features, deps, j = [], [], 0
         for length in range(1, max_length + 1):
             for clique in combinations(attributes, length):
-                for attribute in clique:
-                    deps.append((j, clique))
-                clause = " /\\ ".join(["x[{}]".format(i + 1) for i in clique])
-                feature = "constraint phi[{}] = ({});".format(j + 1, clause)
+                conjunction = " /\\ ".join(["x[{}]".format(i + 1) for i in clique])
+                feature = "constraint phi[{}] = ({});".format(j + 1, conjunction)
                 self.features.append(feature)
+                deps.append((j, clique))
                 j += 1
         num_features = len(self.features)
+
+        global _TEMPLATE
+        _TEMPLATE = \
+            _TEMPLATE.format(phis="\n".join(self.features), solve="{solve}")
 
         w_star = sdepnormal(num_attributes, num_features, deps,
                             sparsity=sparsity, rng=rng, dtype=np.float32)
@@ -78,100 +84,97 @@ class RandProblem(Problem):
         return 1.0
 
     def phi(self, x, features):
-        features = self.enumerate_features(features)
         assert x.shape == (self.num_attributes,)
 
-        PATH = "rand-constr-bool-phi.mzn"
+        targets = self.enumerate_features(features)
 
-        phis = "\n".join([self.features[j] for j in features])
-        solve = _SATISFY
+        PATH = "rand-phi.mzn"
         with open(PATH, "wb") as fp:
-            fp.write(_TEMPLATE.format(**locals()).encode("utf-8"))
+            fp.write(_TEMPLATE.format(solve=_SATISFY).encode("utf-8"))
 
         data = {
             "N_ATTRIBUTES": self.num_attributes,
-            "N_FEATURES": len(features),
-            "W": [0.0] * len(features),
+            "N_FEATURES": self.num_features,
+            "ACTIVE_FEATURES": set([0]),
+            "W": [0.0] * self.num_features,
             "x": array_to_assignment(x, bool),
             "INPUT_X": ["false"] * self.num_attributes,
             "IS_IMPROVEMENT_QUERY": "false",
         }
-        assignments = minizinc(PATH, data=data, output_vars=["phi"])
+        assignments = minizinc(PATH, data=data, output_vars=["phi", "objective"])
 
-        return assignment_to_array(assignments[0]["phi"])
+        phi = assignment_to_array(assignments[0]["phi"])
+        mask = np.ones_like(phi, dtype=bool)
+        mask[targets] = False
+        phi[mask] = 0.0
+
+        return phi
 
     def infer(self, w, features):
-        features = self.enumerate_features(features)
-        assert w.shape == (len(features),)
+        assert w.shape == (self.num_features,)
 
-        if (w == 0).all():
-            print("inference with w == 0")
+        targets = self.enumerate_features(features)
+        assert (w[targets] != 0).any()
 
-        PATH = "rand-constr-bool-infer.mzn"
-
-        phis = "\n".join([self.features[j] for j in features])
-        solve = _MINIMIZE
+        PATH = "rand-infer.mzn"
         with open(PATH, "wb") as fp:
-            fp.write(_TEMPLATE.format(**locals()).encode("utf-8"))
+            fp.write(_TEMPLATE.format(solve=_MAXIMIZE).encode("utf-8"))
 
         data = {
             "N_ATTRIBUTES": self.num_attributes,
-            "N_FEATURES": len(features),
+            "N_FEATURES": self.num_features,
+            "ACTIVE_FEATURES": set(targets),
             "W": array_to_assignment(w, float),
             "INPUT_X": ["false"] * self.num_attributes, # doesn't matter
             "IS_IMPROVEMENT_QUERY": "false",
         }
-        assignments = minizinc(PATH, data=data, output_vars=["x"])
+        assignments = minizinc(PATH, data=data, output_vars=["x", "objective"])
 
         return assignment_to_array(assignments[0]["x"])
 
     def query_improvement(self, x, features):
-        features = self.enumerate_features(features)
         assert x.shape == (self.num_attributes,)
 
-        w_star = self.w_star[features]
-        if (w_star == 0).all():
-            print("improvement query with w == 0")
-        if self.noise > 0:
-            w_star += self.rng.normal(0, self.noise, size=w_star.shape[0]).astype(np.float32)
+        targets = self.enumerate_features(features)
+        assert (self.w_star[targets] != 0).any()
 
-        PATH = "rand-constr-bool-improve.mzn"
-
-        phis = "\n".join([self.features[j] for j in features])
-        solve = _MINIMIZE
+        PATH = "rand-improve.mzn"
         with open(PATH, "wb") as fp:
-            fp.write(_TEMPLATE.format(**locals()).encode("utf-8"))
+            fp.write(_TEMPLATE.format(solve=_MAXIMIZE).encode("utf-8"))
+
+        w_star = np.array(self.w_star)
+        if self.noise:
+            w_star += self.rng.normal(0, self.noise, size=w_star.shape).astype(np.float32)
 
         data = {
             "N_ATTRIBUTES": self.num_attributes,
-            "N_FEATURES": len(features),
+            "N_FEATURES": self.num_features,
+            "ACTIVE_FEATURES": set(targets),
             "W": array_to_assignment(w_star, float),
             "INPUT_X": array_to_assignment(x, bool),
             "IS_IMPROVEMENT_QUERY": "true",
         }
-        assignments = minizinc(PATH, data=data, output_vars=["x"])
+        assignments = minizinc(PATH, data=data, output_vars=["x", "objective"])
 
         return assignment_to_array(assignments[0]["x"])
 
     def query_critique(self, x, features):
-        features = self.enumerate_features(features)
         assert x.shape == (self.num_attributes,)
 
-        w_star = self.w_star
-        if (w_star == 0).all():
-            print("critique query with w == 0")
-
-        scores = w_star * self.phi(x, "all")
-        scores[features] = np.nan
-        rho = np.nanargmin(scores)
-        sign = np.sign(scores[rho])
-
         x_bar = self.query_improvement(x, features)
-        u       = self.utility(x, "all")
-        u_bar   = self.utility(x_bar, "all")
-        u_star  = self.utility(self.x_star, "all")
+
+        u = self.utility(x, "all")
+        u_bar = self.utility(x_bar, "all")
+        u_star = self.utility(self.x_star, "all")
 
         if (u_bar - u) >= 0.1 * (u_star - u):
-            return None
+            return None, None
 
-        return sign * rho
+        targets = self.enumerate_features(features)
+
+        scores = self.w_star * self.phi(x, "all")
+        scores[targets] = np.nan
+        rho = np.nanargmin(scores)
+        sign = np.sign(self.w_star[rho])
+
+        return rho, sign
