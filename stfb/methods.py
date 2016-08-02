@@ -55,7 +55,7 @@ def pp(problem, max_iters, targets="attributes", can_critique=False):
     num_targets = len(targets)
 
     w = np.zeros(problem.num_features, dtype=np.float32)
-    w[targets] = np.ones(num_targets) / np.sqrt(num_targets)
+    w[targets] = np.ones(num_targets)
 
     w_star, x_star = problem.w_star, problem.x_star
     phi_star = problem.phi(x_star, "all")
