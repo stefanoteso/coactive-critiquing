@@ -93,7 +93,7 @@ def pp(problem, max_iters, targets="attributes", can_critique=False):
             """).format(**locals()))
 
         if rho is None:
-            x_bar = problem.query_improvement(x, targets)
+            x_bar = problem.query_improvement(x, "all")
             w += problem.phi(x_bar, targets) - problem.phi(x, targets)
             is_satisfied = (x == x_bar).all()
         else:
