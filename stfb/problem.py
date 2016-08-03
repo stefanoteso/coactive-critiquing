@@ -30,20 +30,6 @@ def sdepnormal(num_attributes, num_features, deps, sparsity=0.1, rng=None,
     x[nz_features] = rng.normal(0, 1, size=(len(nz_features)))
     return x
 
-def array_to_assignment(array, kind=None):
-    assert array.ndim == 1
-    if kind is None:
-        kind = lambda x: x
-    elif kind is bool:
-        kind = lambda x: "true" if x else "false"
-    return list(map(kind, array))
-
-def assignment_to_array(assignment):
-    array = np.zeros(len(assignment))
-    for i, v in enumerate(assignment):
-        array[i] = v
-    return array
-
 class Problem(object):
     """Base class for all problems.
 
@@ -78,6 +64,22 @@ class Problem(object):
 
         self.x_star = self.infer(self.w_star, "all")
         assert self.x_star.shape == (num_attributes,), "inference is b0rked: {} != {}".format(self.x_star.shape, num_attributes)
+
+    @staticmethod
+    def array_to_assignment(array, kind=None):
+        assert array.ndim == 1
+        if kind is None:
+            kind = lambda x: x
+        elif kind is bool:
+            kind = lambda x: "true" if x else "false"
+        return list(map(kind, array))
+
+    @staticmethod
+    def assignment_to_array(assignment):
+        array = np.zeros(len(assignment))
+        for i, v in enumerate(assignment):
+            array[i] = v
+        return array
 
     def get_feature_radius(self):
         """Returns the radius of a single feature."""
