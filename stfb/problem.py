@@ -189,7 +189,21 @@ class Problem(object):
         return rho, sign
 
     def utility(self, x, features):
-        """Computes the utility of a configuration."""
+        """Computes the true utility of a configuration.
+
+        Parameters
+        ----------
+        x : numpy.ndarray of shape (num_attributes,)
+            The configuration.
+        features : list or "all" or "attributes"
+            The features to be used in the computation.
+            The features to be used in the computation.
+
+        Returns
+        -------
+        utility : float
+            The utility of ``x``.
+        """
         assert x.shape == (self.num_attributes,)
 
         targets = self.enumerate_features(features)
