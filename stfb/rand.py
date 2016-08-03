@@ -17,7 +17,7 @@ set of int: FEATURES = 1..N_FEATURES;
 set of int: ACTIVE_FEATURES;
 
 array[FEATURES] of float: W;
-array[FEATURES] of var bool: phi;
+array[FEATURES] of var int: phi;
 array[ATTRIBUTES] of bool: INPUT_X;
 array[ATTRIBUTES] of var bool: x;
 var float: objective;
@@ -26,8 +26,7 @@ bool: IS_IMPROVEMENT_QUERY;
 {phis}
 
 constraint objective =
-    sum(j in ACTIVE_FEATURES)(
-        W[j] * (2 * bool2int(phi[j]) - 1));
+    sum(j in ACTIVE_FEATURES)(W[j] * phi[j]);
 
 constraint IS_IMPROVEMENT_QUERY ->
     sum(i in ATTRIBUTES)(
@@ -68,7 +67,7 @@ class RandProblem(Problem):
         for length in range(1, max_length + 1):
             for clique in combinations(attributes, length):
                 xor = " xor ".join(["x[{}]".format(i + 1) for i in clique])
-                feature = "constraint phi[{}] = ({});".format(j + 1, xor)
+                feature = "constraint phi[{}] = (2 * ({}) - 1);".format(j + 1, xor)
                 self.features.append(feature)
                 deps.append((j, clique))
                 j += 1
