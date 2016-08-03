@@ -5,7 +5,7 @@ from pymzn import minizinc
 from itertools import product, combinations
 from sklearn.utils import check_random_state
 
-from . import Problem, array_to_assignment, assignment_to_array
+from . import Problem
 
 _TEMPLATE = """\
 int: NUM_FEATURES;
@@ -257,7 +257,7 @@ class PCProblem(Problem):
         }
         assignments = minizinc(PATH, data=data, keep=True, parallel=4, output_vars=["phi", "objective"])
 
-        return assignment_to_array(assignments[0]["phi"])
+        return self.assignment_to_array(assignments[0]["phi"])
 
     def infer(self, w, features):
         features = self.enumerate_features(features)
@@ -276,13 +276,13 @@ class PCProblem(Problem):
 
         data = {
             "NUM_FEATURES": len(features),
-            "W": array_to_assignment(w, float),
+            "W": self.array_to_assignment(w, float),
             "INPUT_X": [0, 0, 0, 0, 0, 0], # doesn't matter
             "IS_IMPROVEMENT_QUERY": "false",
         }
         assignments = minizinc(PATH, data=data, keep=True, parallel=4, output_vars=["x", "objective"])
 
-        return assignment_to_array(assignments[0]["x"])
+        return self.assignment_to_array(assignments[0]["x"])
 
     def query_improvement(self, x, features):
         features = self.enumerate_features(features)
@@ -302,11 +302,11 @@ class PCProblem(Problem):
 
         data = {
             "NUM_FEATURES": len(features),
-            "W": array_to_assignment(w_star, float),
-            "INPUT_X": array_to_assignment(x[:6], int),
+            "W": self.array_to_assignment(w_star, float),
+            "INPUT_X": self.array_to_assignment(x[:6], int),
             "IS_IMPROVEMENT_QUERY": "true",
         }
         assignments = minizinc(PATH, data=data, keep=True, parallel=4, output_vars=["x", "objective"])
 
-        x_bar = assignment_to_array(assignments[0]["x"])
+        x_bar = self.assignment_to_array(assignments[0]["x"])
         return x_bar
