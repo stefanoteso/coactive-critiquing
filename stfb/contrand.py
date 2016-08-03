@@ -26,8 +26,7 @@ bool: IS_IMPROVEMENT_QUERY;
 {phis}
 
 constraint objective =
-    sum(j in ACTIVE_FEATURES)(
-        W[j] * (2 * bool2int(phi[j]) - 1));
+    sum(j in ACTIVE_FEATURES)(W[j] * phi[j]);
 
 constraint IS_IMPROVEMENT_QUERY ->
     sum(i in ATTRIBUTES)(
@@ -52,7 +51,7 @@ class ContRandProblem(Problem):
                 dot = " + ".join(["({} * x[{}])".format(c, i + 1)
                                   for c, i in zip(coefficients, clique)])
                 bias = rng.randint(10)
-                constraint = "constraint phi[{}] = ({} >= {});".format(j + 1, dot, bias)
+                constraint = "constraint phi[{}] = 2 * ({} >= {}) - 1;".format(j + 1, dot, bias)
                 self.constraints.append(constraint)
                 deps.append((j, clique))
                 j += 1
