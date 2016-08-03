@@ -157,24 +157,3 @@ class RandProblem(Problem):
         assignments = minizinc(PATH, data=data, output_vars=["x", "objective"])
 
         return assignment_to_array(assignments[0]["x"])
-
-    def query_critique(self, x, features):
-        assert x.shape == (self.num_attributes,)
-
-        x_bar = self.query_improvement(x, features)
-
-        u = self.utility(x, "all")
-        u_bar = self.utility(x_bar, "all")
-        u_star = self.utility(self.x_star, "all")
-
-        if (u_bar - u) >= 0.1 * (u_star - u):
-            return None, None
-
-        targets = self.enumerate_features(features)
-
-        scores = self.w_star * self.phi(x, "all")
-        scores[targets] = np.nan
-        rho = np.nanargmin(scores)
-        sign = np.sign(self.w_star[rho])
-
-        return rho, sign
