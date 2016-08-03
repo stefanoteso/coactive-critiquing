@@ -63,7 +63,9 @@ class Problem(object):
         self.w_star = w_star
 
         self.x_star = self.infer(self.w_star, "all")
-        assert self.x_star.shape == (num_attributes,), "inference is b0rked: {} != {}".format(self.x_star.shape, num_attributes)
+        assert self.x_star.shape == (num_attributes,), \
+            "inference is b0rked: {} != {}".format(self.x_star.shape,
+                                                   num_attributes)
 
     @staticmethod
     def array_to_assignment(array, kind=None):
