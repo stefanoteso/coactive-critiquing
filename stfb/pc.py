@@ -310,11 +310,3 @@ class PCProblem(Problem):
 
         x_bar = assignment_to_array(assignments[0]["x"])
         return x_bar
-
-    def query_critique(self, x, features):
-        features = self.enumerate_features(features)
-        assert x.shape == (self.num_attributes,)
-
-        # WRITEME
-
-        return None
