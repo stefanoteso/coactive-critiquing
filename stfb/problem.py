@@ -128,10 +128,6 @@ class Problem(object):
         """
         raise NotImplementedError()
 
-    def compute_best_configuration(self, features):
-        proj_w_star = self.w_star[self.enumerate_features(features)]
-        return self.infer(proj_w_star, features)
-
     def query_improvement(self, x, features):
         """Searches for a local maximum utility modification.
 
