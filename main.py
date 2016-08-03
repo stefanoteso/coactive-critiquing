@@ -60,14 +60,16 @@ def main():
                         help="number of users to average over")
     parser.add_argument("-T", "--max-iters", type=int, default=100,
                         help="maximum number of iterations")
-    parser.add_argument("-n", "--num-attributes", type=int, default=10,
-                        help="number of attributes, for problems that support it")
     parser.add_argument("-u", "--update", type=str, default="perceptron",
                         help="pp update type")
-    parser.add_argument("-e", "--noise", type=float, default=0.1,
-                        help="amplitude of noise for improvement query")
     parser.add_argument("-S", "--sparsity", type=float, default=0.2,
                         help="percentage of non-zero weights")
+    parser.add_argument("-E", "--noise", type=float, default=0.1,
+                        help="amplitude of noise for improvement query")
+    parser.add_argument("-C", "--critique-alpha", type=float, default=0.1,
+                        help="threshold used to trigger critiques")
+    parser.add_argument("-n", "--num-attributes", type=int, default=10,
+                        help="number of attributes, for problems that support it")
     parser.add_argument("-s", "--seed", type=int, default=0,
                         help="RNG seed")
     parser.add_argument("-d", "--debug", action="store_true",
