@@ -23,7 +23,7 @@ def sdepnormal(num_attributes, num_features, deps, sparsity=0.1, rng=None,
 
     nz_features = []
     for j, clique in deps:
-        if set(clique) & nz_attributes:
+        if set(clique).issubset(nz_attributes):
             nz_features.append(j)
 
     x = np.zeros(num_features, dtype=dtype)
