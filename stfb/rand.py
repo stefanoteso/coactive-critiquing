@@ -64,8 +64,8 @@ class RandProblem(Problem):
         self.features, deps, j = [], [], 0
         for length in range(1, max_length + 1):
             for clique in combinations(attributes, length):
-                conjunction = " /\\ ".join(["x[{}]".format(i + 1) for i in clique])
-                feature = "constraint phi[{}] = ({});".format(j + 1, conjunction)
+                xor = " xor ".join(["x[{}]".format(i + 1) for i in clique])
+                feature = "constraint phi[{}] = ({});".format(j + 1, xor)
                 self.features.append(feature)
                 deps.append((j, clique))
                 j += 1
