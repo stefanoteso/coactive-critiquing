@@ -5,7 +5,7 @@ from pymzn import minizinc
 from itertools import product, combinations
 from sklearn.utils import check_random_state
 
-from . import Problem, array_to_assignment, assignment_to_array, sdepnormal
+from . import Problem, sdepnormal
 
 _TEMPLATE = """\
 int: N_ATTRIBUTES;
@@ -81,13 +81,13 @@ class ContRandProblem(Problem):
             "N_FEATURES": self.num_features,
             "ACTIVE_FEATURES": set([0]),
             "W": [0.0] * self.num_features,
-            "x": array_to_assignment(x, float),
+            "x": self.array_to_assignment(x, float),
             "INPUT_X": [0.0] * self.num_attributes,
             "IS_IMPROVEMENT_QUERY": "false",
         }
         assignments = minizinc(PATH, data=data, output_vars=["phi", "objective"])
 
-        phi = assignment_to_array(assignments[0]["phi"])
+        phi = self.assignment_to_array(assignments[0]["phi"])
         mask = np.ones_like(phi, dtype=bool)
         mask[targets] = False
         phi[mask] = 0.0
@@ -108,13 +108,13 @@ class ContRandProblem(Problem):
             "N_ATTRIBUTES": self.num_attributes,
             "N_FEATURES": self.num_features,
             "ACTIVE_FEATURES": set(targets),
-            "W": array_to_assignment(w, float),
+            "W": self.array_to_assignment(w, float),
             "INPUT_X": [0.0] * self.num_attributes,
             "IS_IMPROVEMENT_QUERY": "false",
         }
         assignments = minizinc(PATH, data=data, output_vars=["x", "objective"], parallel=0)
 
-        return assignment_to_array(assignments[0]["x"])
+        return self.assignment_to_array(assignments[0]["x"])
 
     def query_improvement(self, x, features):
         assert x.shape == (self.num_attributes,)
@@ -132,10 +132,10 @@ class ContRandProblem(Problem):
             "N_ATTRIBUTES": self.num_attributes,
             "N_FEATURES": self.num_features,
             "ACTIVE_FEATURES": set(targets),
-            "W": array_to_assignment(self.w_star, float),
-            "INPUT_X": array_to_assignment(x, float),
+            "W": self.array_to_assignment(self.w_star, float),
+            "INPUT_X": self.array_to_assignment(x, float),
             "IS_IMPROVEMENT_QUERY": "true",
         }
         assignments = minizinc(PATH, data=data, output_vars=["x", "objective"])
 
-        return assignment_to_array(assignments[0]["x"])
+        return self.assignment_to_array(assignments[0]["x"])
