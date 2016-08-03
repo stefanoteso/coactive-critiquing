@@ -63,11 +63,13 @@ def pp(problem, max_iters, targets="attributes", can_critique=False):
     trace = []
     for it in range(max_iters):
         x = problem.infer(w, targets)
+        x_bar = problem.query_improvement(x, "all")
+        is_satisfied = (x == x_bar).all()
 
         if not can_critique:
             rho, sign = None, None
         else:
-            rho, sign = problem.query_critique(x, targets)
+            rho, sign = problem.query_critique(x, x_bar, targets)
 
         phi = problem.phi(x, "all")
         print(dedent("""\
@@ -93,11 +95,8 @@ def pp(problem, max_iters, targets="attributes", can_critique=False):
             """).format(**locals()))
 
         if rho is None:
-            x_bar = problem.query_improvement(x, "all")
             w += problem.phi(x_bar, targets) - problem.phi(x, targets)
-            is_satisfied = (x == x_bar).all()
         else:
-            x_bar = None
             w[rho] = -sign * problem.get_feature_radius()
             targets.append(rho)
             is_satisfied = False

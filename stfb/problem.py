@@ -155,13 +155,15 @@ class Problem(object):
         """
         raise NotImplementedError()
 
-    def query_critique(self, x, features):
+    def query_critique(self, x, x_bar, features):
         """Searches for the maximum utility feature.
 
         Parameters
         ----------
         x : numpy.ndarray of shape (num_attributes,)
             The configuration.
+        x_bar : numpy.ndarray of shape (num_attributes,)
+            The improved configuration.
         features : list or "all" or "attributes"
             The features to be used in the computation.
 
@@ -171,8 +173,6 @@ class Problem(object):
             The locally optimal critique feature or None if no critique.
         """
         assert x.shape == (self.num_attributes,)
-
-        x_bar = self.query_improvement(x, features)
 
         u = self.utility(x, "all")
         u_bar = self.utility(x_bar, "all")
