@@ -25,10 +25,13 @@ bool: IS_IMPROVEMENT_QUERY;
 
 {phis}
 
-constraint objective = sum(j in FEATURES)(W[j] * (2 * bool2int(phi[j]) - 1));
+constraint objective =
+    sum(j in ACTIVE_FEATURES)(
+        W[j] * (2 * bool2int(phi[j]) - 1));
 
 constraint IS_IMPROVEMENT_QUERY ->
-    sum(i in ATTRIBUTES)(bool2int(x[i] != INPUT_X[i])) <= 1;
+    sum(i in ATTRIBUTES)(
+        bool2int(x[i] != INPUT_X[i])) <= 1;
 
 {solve}
 """
@@ -95,7 +98,7 @@ class RandProblem(Problem):
         data = {
             "N_ATTRIBUTES": self.num_attributes,
             "N_FEATURES": self.num_features,
-            "ACTIVE_FEATURES": set([0]),
+            "ACTIVE_FEATURES": set([1]),
             "W": [0.0] * self.num_features,
             "x": self.array_to_assignment(x, bool),
             "INPUT_X": ["false"] * self.num_attributes,
@@ -123,7 +126,7 @@ class RandProblem(Problem):
         data = {
             "N_ATTRIBUTES": self.num_attributes,
             "N_FEATURES": self.num_features,
-            "ACTIVE_FEATURES": set(targets),
+            "ACTIVE_FEATURES": {j + 1 for j in targets},
             "W": self.array_to_assignment(w, float),
             "INPUT_X": ["false"] * self.num_attributes, # doesn't matter
             "IS_IMPROVEMENT_QUERY": "false",
@@ -149,7 +152,7 @@ class RandProblem(Problem):
         data = {
             "N_ATTRIBUTES": self.num_attributes,
             "N_FEATURES": self.num_features,
-            "ACTIVE_FEATURES": set(targets),
+            "ACTIVE_FEATURES": {j + 1 for j in targets},
             "W": self.array_to_assignment(w_star, float),
             "INPUT_X": self.array_to_assignment(x, bool),
             "IS_IMPROVEMENT_QUERY": "true",
