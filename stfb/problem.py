@@ -174,25 +174,23 @@ class Problem(object):
         """
         assert x.shape == (self.num_attributes,)
 
-        u = self.utility(x, "all")
-        u_bar = self.utility(x_bar, "all")
-        u_star = self.utility(self.x_star, "all")
-
-        if (u_bar - u) >= self.critique_alpha * (u_star - u):
+        targets = self.enumerate_features(features)
+        if len(targets) == self.num_features:
             return None, None
 
-        targets = self.enumerate_features(features)
+        u = self.utility(x, "all")
+        loss_bar = self.utility(x_bar, "all") - u
+        loss_star = self.utility(self.x_star, "all") - u
+        assert loss_star >= loss_bar
+
+        if loss_bar > (self.critique_alpha * loss_star):
+            return None, None
 
         scores = self.w_star * self.phi(x, "all")
         scores[targets] = np.nan
-        try:
-            rho = np.nanargmin(scores)
-        except ValueError:
-            return None, None
+        rho = np.nanargmin(scores)
 
-        sign = np.sign(self.w_star[rho])
-
-        return rho, sign
+        return rho, -np.sign(scores[rho])
 
     def utility(self, x, features):
         """Computes the true utility of a configuration.
