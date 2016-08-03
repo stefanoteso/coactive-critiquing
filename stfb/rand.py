@@ -138,16 +138,16 @@ class RandProblem(Problem):
     def query_improvement(self, x, features):
         assert x.shape == (self.num_attributes,)
 
+        w_star = np.array(self.w_star)
+        if self.noise:
+            w_star += self.rng.normal(0, self.noise, size=w_star.shape).astype(np.float32)
+
         targets = self.enumerate_features(features)
-        assert (self.w_star[targets] != 0).any()
+        assert (w_star[targets] != 0).any()
 
         PATH = "rand-improve.mzn"
         with open(PATH, "wb") as fp:
             fp.write(_TEMPLATE.format(solve=_MAXIMIZE).encode("utf-8"))
-
-        w_star = np.array(self.w_star)
-        if self.noise:
-            w_star += self.rng.normal(0, self.noise, size=w_star.shape).astype(np.float32)
 
         data = {
             "N_ATTRIBUTES": self.num_attributes,
