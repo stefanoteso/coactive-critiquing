@@ -97,7 +97,7 @@ def pp(problem, max_iters, targets="attributes", can_critique=False):
         if rho is None:
             w += problem.phi(x_bar, targets) - problem.phi(x, targets)
         else:
-            w[rho] = -sign * problem.get_feature_radius()
+            w[rho] = sign * problem.get_feature_radius()
             targets.append(rho)
             is_satisfied = False
 
