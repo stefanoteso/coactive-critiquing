@@ -5,15 +5,22 @@ import pickle
 import numpy as np
 import matplotlib.pyplot as plt
 
+_METHOD_TO_COLORS = {
+    "pp-attr":  ("#204A87", "#3465A4"),
+    "pp-all":   ("#A40000", "#CC0000"),
+    "cpp":      ("#5C3566", "#75507B"),
+}
+
 def _get_ticks(x):
     return x / 10 # XXX
     offset = np.floor(x / 10.0)
     decimals = -np.log10(offset) + 1
     return int(np.round(offset, decimals))
 
-def _draw_matrices(ax, matrices, cumulative=False):
+def _draw_matrices(ax, matrices, args, cumulative=False):
     max_x, max_y = None, None
-    for i, matrix in enumerate(matrices):
+    for i, (matrix, arg) in enumerate(zip(matrices, args)):
+        fg, bg = _METHOD_TO_COLORS[arg.method]
 
         current_max_x = matrix.shape[1]
         if max_x is None or current_max_x > max_x:
@@ -31,8 +38,8 @@ def _draw_matrices(ax, matrices, cumulative=False):
         if max_y is None or current_max_y > max_y:
             max_y = current_max_y
 
-        ax.plot(x, y, "o-", linewidth=2.5)
-        ax.fill_between(x, y - yerr, y + yerr, alpha=0.35, linewidth=0)
+        ax.plot(x, y, "o-", linewidth=2.5, color=fg)
+        ax.fill_between(x, y - yerr, y + yerr, alpha=0.35, linewidth=0, color=bg)
 
     ax.set_xlim([0, max_x])
     ax.set_ylim([0, max_y])
@@ -58,16 +65,17 @@ def main():
     time_ax.set_xlabel("Number of iterations")
     time_ax.set_ylabel("Cumulative time (seconds)")
 
-    loss_matrices, time_matrices = [], []
+    experiment_args, loss_matrices, time_matrices = [], [], []
     for path in args.results_path:
         with open(path, "rb") as fp:
             data = pickle.load(fp)
+        experiment_args.append(data["experiment_args"])
         loss_matrices.append(data["loss_matrix"])
         time_matrices.append(data["time_matrix"])
         assert loss_matrices[-1].shape == time_matrices[-1].shape
 
-    _draw_matrices(loss_ax, loss_matrices, cumulative=False)
-    _draw_matrices(time_ax, time_matrices, cumulative=True)
+    _draw_matrices(loss_ax, loss_matrices, experiment_args, cumulative=False)
+    _draw_matrices(time_ax, time_matrices, experiment_args, cumulative=True)
 
     loss_fig.savefig(args.png_basename + "_loss.png", bbox_inches="tight")
     time_fig.savefig(args.png_basename + "_time.png", bbox_inches="tight")
