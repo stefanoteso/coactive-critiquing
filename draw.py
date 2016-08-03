@@ -6,9 +6,9 @@ import numpy as np
 import matplotlib.pyplot as plt
 
 _METHOD_TO_COLORS = {
-    "pp-attr":  ("#204A87", "#3465A4"),
-    "pp-all":   ("#A40000", "#CC0000"),
-    "cpp":      ("#5C3566", "#75507B"),
+    "pp-attr":  ("#204A87", "#3465A4"), # blue
+    "pp-all":   ("#A40000", "#CC0000"), # red
+    "cpp":      ("#5C3566", "#75507B"), # violet
 }
 
 def _get_ticks(x):
