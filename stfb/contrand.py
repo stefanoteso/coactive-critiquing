@@ -156,7 +156,11 @@ class ContRandProblem(Problem):
 
         scores = self.w_star * self.phi(x, "all")
         scores[targets] = np.nan
-        rho = np.nanargmin(scores)
+        try:
+            rho = np.nanargmin(scores)
+        except ValueError:
+            return None, None
+
         sign = np.sign(self.w_star[rho])
 
         return rho, sign
