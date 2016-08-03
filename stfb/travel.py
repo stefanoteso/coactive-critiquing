@@ -6,7 +6,7 @@ from itertools import product, combinations
 from sklearn.utils import check_random_state
 from textwrap import dedent
 
-from . import Problem, array_to_assignment, assignment_to_array
+from . import Problem
 
 _TEMPLATE = """\
 % constants
@@ -189,13 +189,13 @@ class TravelProblem(Problem):
             "LOCATION_COST": self._location_cost,
             "TRAVEL_TIME": self._travel_time,
             "W": [0] * len(features), # doesn't matter
-            "x": array_to_assignment(x, int),
+            "x": self.array_to_assignment(x, int),
             "INPUT_X": [0] * self.num_attributes, # doesn't matter
             "IS_IMPROVEMENT_QUERY": "false",
         }
         assignments = minizinc(PATH, data=data)
 
-        return assignment_to_array(assignments[0]["phi"])
+        return self.assignment_to_array(assignments[0]["phi"])
 
     def infer(self, w, features):
         features = self.enumerate_features(features)
@@ -220,13 +220,13 @@ class TravelProblem(Problem):
             "LOCATION_ACTIVITIES": self._location_activities,
             "LOCATION_COST": self._location_cost,
             "TRAVEL_TIME": self._travel_time,
-            "W": array_to_assignment(w, float),
+            "W": self.array_to_assignment(w, float),
             "INPUT_X": [0] * self.num_attributes, # doesn't matter
             "IS_IMPROVEMENT_QUERY": "false",
         }
         assignments = minizinc(PATH, data=data)
 
-        return assignment_to_array(assignments[0]["x"])
+        return self.assignment_to_array(assignments[0]["x"])
 
     def query_improvement(self, x, features):
         features = self.enumerate_features(features)
@@ -252,11 +252,11 @@ class TravelProblem(Problem):
             "LOCATION_ACTIVITIES": self._location_activities,
             "LOCATION_COST": self._location_cost,
             "TRAVEL_TIME": self._travel_time,
-            "W": array_to_assignment(w_star, float),
-            "INPUT_X": array_to_assignment(x, int),
+            "W": self.array_to_assignment(w_star, float),
+            "INPUT_X": self.array_to_assignment(x, int),
             "IS_IMPROVEMENT_QUERY": "true",
         }
         assignments = minizinc(PATH, data=data)
 
-        x_bar = assignment_to_array(assignments[0]["x"])
+        x_bar = self.assignment_to_array(assignments[0]["x"])
         return x_bar
