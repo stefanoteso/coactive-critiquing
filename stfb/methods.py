@@ -58,8 +58,18 @@ def pp(problem, max_iters, targets="attributes", can_critique=False):
     w = np.zeros(problem.num_features, dtype=np.float32)
     w[targets] = np.ones(num_targets)
 
-    w_star, x_star = problem.w_star, problem.x_star
-    phi_star = problem.phi(x_star, "all")
+    print(dedent("""\
+        == USER INFO ==
+
+        w_star =
+        {}
+
+        x_star =
+        {}
+        phi(x_star) =
+        {}
+        """).format(problem.w_star, problem.x_star,
+                    problem.phi(problem.x_star, "all")))
 
     trace = []
     for it in range(max_iters):
@@ -79,20 +89,13 @@ def pp(problem, max_iters, targets="attributes", can_critique=False):
         print(dedent("""\
             == ITERATION {it:3d} ==
 
-            w_star =
-            {w_star}
             w =
             {w}
 
             x =
             {x}
-            x_star =
-            {x_star}
-
             phi(x) =
             {phi}
-            phi(x_star) =
-            {phi_star}
 
             rho = {rho}
             sign = {sign}
