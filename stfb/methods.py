@@ -2,6 +2,7 @@
 
 import numpy as np
 from textwrap import dedent
+from time import time
 
 # NOTE the user must be able to answer "no change", or alpha-informativity
 # breaks and convergence can not occur.
@@ -62,7 +63,10 @@ def pp(problem, max_iters, targets="attributes", can_critique=False):
 
     trace = []
     for it in range(max_iters):
+        t0 = time()
         x = problem.infer(w, targets)
+        t0 = time() - t0
+
         x_bar = problem.query_improvement(x, "all")
         is_satisfied = (x == x_bar).all()
 
@@ -94,12 +98,14 @@ def pp(problem, max_iters, targets="attributes", can_critique=False):
             sign = {sign}
             """).format(**locals()))
 
+        t1 = time()
         if rho is None:
             w += problem.phi(x_bar, targets) - problem.phi(x, targets)
         else:
             w[rho] = sign * problem.get_feature_radius()
             targets.append(rho)
             is_satisfied = False
+        t1 = time() - t1
 
         num_targets = len(targets)
         lloss = problem.utility_loss(x, targets)
@@ -120,7 +126,7 @@ def pp(problem, max_iters, targets="attributes", can_critique=False):
             is_satisfied = {is_satisfied}
             """).format(**locals()))
 
-        trace.append((gloss, -1.0))
+        trace.append((gloss, t0 + t1))
         if is_satisfied:
             print("user is satisfied!")
             break
