@@ -63,13 +63,13 @@ class RandProblem(Problem):
 
         attributes = list(range(num_attributes))
 
-        self.features, deps, j = [], [], 0
+        self.features, cliques, j = [], [], 0
         for length in range(1, max_length + 1):
             for clique in combinations(attributes, length):
                 xor = " xor ".join(["x[{}]".format(i + 1) for i in clique])
                 feature = "constraint phi[{}] = (2 * ({}) - 1);".format(j + 1, xor)
                 self.features.append(feature)
-                deps.append((j, clique))
+                cliques.append(clique)
                 j += 1
         num_features = len(self.features)
 
@@ -77,8 +77,8 @@ class RandProblem(Problem):
         _TEMPLATE = \
             _TEMPLATE.format(phis="\n".join(self.features), solve="{solve}")
 
-        w_star = sdepnormal(num_attributes, num_features, deps,
-                            sparsity=sparsity, rng=rng, dtype=np.float32)
+        w_star = sdepnormal(num_attributes, num_features, cliques,
+                            sparsity=sparsity, rng=rng).astype(np.float32)
 
         super().__init__(num_attributes, num_attributes, num_features, w_star)
 
