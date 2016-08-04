@@ -5,8 +5,7 @@ from itertools import combinations
 from sklearn.utils import check_random_state
 from textwrap import dedent
 
-def sdepnormal(num_attributes, num_features, deps, sparsity=0.1, rng=None,
-               dtype=None):
+def sdepnormal(num_attributes, num_features, cliques, sparsity=0.1, rng=None):
     """Samples from a 'sparse normal' distribution with dependent features.
 
     First num_attributes * sparsity attributes are chosen as those that will
@@ -22,11 +21,11 @@ def sdepnormal(num_attributes, num_features, deps, sparsity=0.1, rng=None,
     nz_attributes = set(list(rng.permutation(num_attributes)[:nnz_attributes]))
 
     nz_features = []
-    for j, clique in deps:
+    for j, clique in enumerate(cliques):
         if set(clique).issubset(nz_attributes):
             nz_features.append(j)
 
-    x = np.zeros(num_features, dtype=dtype)
+    x = np.zeros(num_features)
     x[nz_features] = rng.normal(0, 1, size=(len(nz_features)))
     return x
 
