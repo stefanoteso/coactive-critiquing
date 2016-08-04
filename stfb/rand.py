@@ -41,14 +41,15 @@ _MAXIMIZE = "solve maximize objective;"
 class RandProblem(Problem):
     """A randomly-constrained Boolean problem.
 
-    Constraints are conjunctions of attributes.
+    Constraints are exclusive-ORs of attributes.
 
     Parameters
     ----------
     num_attributes : positive int
         Number of base attributes.
-    max_length : positive int
-        Maximum length of the clauses (features).
+    max_length : positive int, defaults to 2
+        Maximum length of the clauses (features). Note that certain values
+        (e.g. 3) render the problem fully independent of the features.
     sparsity : float, defaults to 0.2
         Percentage of non-zero weights.
     noise : float, defaults to 0.1
@@ -56,7 +57,7 @@ class RandProblem(Problem):
     rng : None or int or numpy.random.RandomState, defaults to None
         The RNG.
     """
-    def __init__(self, num_attributes, max_length=3, noise=0.1, sparsity=0.2,
+    def __init__(self, num_attributes, max_length=2, noise=0.1, sparsity=0.2,
                  rng=None):
         rng = check_random_state(rng)
         self.noise, self.rng = noise, rng
