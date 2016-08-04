@@ -131,7 +131,10 @@ def pp(problem, max_iters, targets="attributes", can_critique=False):
 
         trace.append((gloss, t0 + t1))
         if is_satisfied:
-            print("user is satisfied!")
+            if gloss > 0:
+                print("user is not satisfied, but can not improve item!")
+            else:
+                print("user is satisfied!")
             break
     else:
         print("user not satisfied, iterations elapsed")
