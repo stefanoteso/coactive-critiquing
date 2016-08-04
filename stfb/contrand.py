@@ -17,7 +17,7 @@ set of int: FEATURES = 1..N_FEATURES;
 set of int: ACTIVE_FEATURES;
 
 array[FEATURES] of float: W;
-array[FEATURES] of var bool: phi;
+array[FEATURES] of var int: phi;
 array[ATTRIBUTES] of -1.0 .. 1.0: INPUT_X;
 array[ATTRIBUTES] of var -1.0 .. 1.0: x;
 var float: objective;
@@ -114,7 +114,7 @@ class ContRandProblem(Problem):
             "INPUT_X": [0.0] * self.num_attributes,
             "IS_IMPROVEMENT_QUERY": "false",
         }
-        assignments = minizinc(PATH, data=data, output_vars=["x", "objective"], parallel=0)
+        assignments = minizinc(PATH, data=data, output_vars=["x", "objective"])
 
         return self.assignment_to_array(assignments[0]["x"])
 
