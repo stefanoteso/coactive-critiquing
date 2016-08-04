@@ -39,8 +39,27 @@ _SATISFY = "solve satisfy;"
 _MAXIMIZE = "solve maximize objective;"
 
 class ContRandProblem(Problem):
-    def __init__(self, num_attributes, max_length=3, rng=None):
+    """A randomly-constrained Boolean-LA problem.
+
+    Constraints are conjunctions of attributes.
+
+    Parameters
+    ----------
+    num_attributes : positive int
+        Number of base attributes.
+    max_length : positive int, defaults to 2
+        Maximum length of the clauses (features).
+    sparsity : float, defaults to 0.2
+        Percentage of non-zero weights.
+    noise : float, defaults to 0.1
+        Amplitude of normal noise applied to weights during improvement.
+    rng : None or int or numpy.random.RandomState, defaults to None
+        The RNG.
+    """
+    def __init__(self, num_attributes, max_length=2, noise=0.1, sparsity=0.2,
+                 rng=None):
         rng = check_random_state(rng)
+        self.noise, self.rng = noise, rng
 
         attributes = list(range(num_attributes))
 
@@ -62,7 +81,7 @@ class ContRandProblem(Problem):
             _TEMPLATE.format(phis="\n".join(self.constraints), solve="{solve}")
 
         w_star = sdepnormal(num_attributes, num_features, cliques,
-                            sparsity=0.1, rng=rng).astype(np.float32)
+                            sparsity=sparsity, rng=rng).astype(np.float32)
 
         super().__init__(num_attributes, num_attributes, num_features, w_star)
 
@@ -121,20 +140,22 @@ class ContRandProblem(Problem):
     def query_improvement(self, x, features):
         assert x.shape == (self.num_attributes,)
 
+        w_star = np.array(self.w_star)
+        if self.noise:
+            w_star += self.rng.normal(0, self.noise, size=w_star.shape).astype(np.float32)
+
         targets = self.enumerate_features(features)
-        assert (self.w_star[targets] != 0).any()
+        assert (w_star[targets] != 0).any()
 
         PATH = "contrand-improve.mzn"
         with open(PATH, "wb") as fp:
             fp.write(_TEMPLATE.format(solve=_MAXIMIZE).encode("utf-8"))
 
-        # TODO apply noise to w_star
-
         data = {
             "N_ATTRIBUTES": self.num_attributes,
             "N_FEATURES": self.num_features,
             "ACTIVE_FEATURES": {j + 1 for j in targets},
-            "W": self.array_to_assignment(self.w_star, float),
+            "W": self.array_to_assignment(w_star, float),
             "INPUT_X": self.array_to_assignment(x, float),
             "IS_IMPROVEMENT_QUERY": "true",
         }
