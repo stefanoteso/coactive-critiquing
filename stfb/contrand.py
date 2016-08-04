@@ -44,7 +44,7 @@ class ContRandProblem(Problem):
 
         attributes = list(range(num_attributes))
 
-        self.constraints, deps, j = [], [], 0
+        self.constraints, cliques, j = [], [], 0
         for length in range(1, max_length + 1):
             for clique in combinations(attributes, length):
                 coefficients = rng.randint(10, size=len(clique))
@@ -53,7 +53,7 @@ class ContRandProblem(Problem):
                 bias = rng.randint(10)
                 constraint = "constraint phi[{}] = 2 * ({} >= {}) - 1;".format(j + 1, dot, bias)
                 self.constraints.append(constraint)
-                deps.append((j, clique))
+                cliques.append(clique)
                 j += 1
         num_features = len(self.constraints)
 
@@ -61,8 +61,8 @@ class ContRandProblem(Problem):
         _TEMPLATE = \
             _TEMPLATE.format(phis="\n".join(self.constraints), solve="{solve}")
 
-        w_star = sdepnormal(num_attributes, num_features, deps,
-                            sparsity=0.1, rng=rng, dtype=np.float32)
+        w_star = sdepnormal(num_attributes, num_features, cliques,
+                            sparsity=0.1, rng=rng).astype(np.float32)
 
         super().__init__(num_attributes, num_attributes, num_features, w_star)
 
