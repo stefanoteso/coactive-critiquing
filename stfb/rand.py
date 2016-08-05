@@ -144,7 +144,7 @@ class RandProblem(Problem):
             "INPUT_X": ["false"] * self.num_attributes, # doesn't matter
             "INPUT_UTILITY": 0.0, # doesn't matter
         }
-        assignments = minizinc(PATH, data=data, output_vars=["x", "objective"])
+        assignments = minizinc(PATH, data=data, output_vars=["x", "objective"], parallel=0)
 
         return self.assignment_to_array(assignments[0]["x"])
 
@@ -176,7 +176,7 @@ class RandProblem(Problem):
             "INPUT_X": self.array_to_assignment(x, bool),
             "INPUT_UTILITY": utility,
         }
-        assignments = minizinc(PATH, data=data, output_vars=["x", "objective"])
+        assignments = minizinc(PATH, data=data, output_vars=["x", "objective"], parallel=0)
 
         x_bar = self.assignment_to_array(assignments[0]["x"])
         utility_bar = np.dot(w_star, self.phi(x, "all"))
