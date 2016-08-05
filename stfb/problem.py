@@ -138,7 +138,8 @@ class Problem(object):
     def query_improvement(self, x, features):
         """Searches for a local maximum utility modification.
 
-        If x is optimal, it may be returned unmodified.
+        If loss(x) is zero, i.e. x is optimal, it is return unmodified; under
+        no other circumstances x can be returned unmodified.
 
         Parameters
         ----------
@@ -177,10 +178,9 @@ class Problem(object):
         if len(targets) == self.num_features:
             return None, None
 
-        u = self.utility(x, "all")
-        loss_bar = self.utility(x_bar, "all") - u
-        loss_star = self.utility(self.x_star, "all") - u
-        assert loss_star >= loss_bar
+        u = self.utility(x, targets)
+        loss_bar = self.utility(x_bar, targets) - u
+        loss_star = self.utility(self.x_star, targets) - u
 
         if loss_bar > (self.critique_alpha * loss_star):
             return None, None
@@ -189,7 +189,8 @@ class Problem(object):
         scores[targets] = np.nan
         rho = np.nanargmin(scores)
 
-        return rho, -np.sign(scores[rho])
+        #return rho, -np.sign(scores[rho])
+        return rho, np.sign(self.w_star[rho])
 
     def utility(self, x, features):
         """Computes the true utility of a configuration.
