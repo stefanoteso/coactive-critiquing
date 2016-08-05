@@ -86,6 +86,7 @@ def pp(problem, max_iters, targets="attributes", can_critique=False):
             rho, sign = problem.query_critique(x, x_bar, targets)
 
         phi = problem.phi(x, "all")
+        phi_bar = problem.phi(x_bar, "all")
         print(dedent("""\
             == ITERATION {it:3d} ==
 
@@ -117,6 +118,8 @@ def pp(problem, max_iters, targets="attributes", can_critique=False):
         print(dedent("""\
             x_bar =
             {x_bar}
+            phi(x_bar) =
+            {phi_bar}
 
             new w =
             {w}
