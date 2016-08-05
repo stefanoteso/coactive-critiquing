@@ -112,8 +112,7 @@ def pp(problem, max_iters, targets="attributes", can_critique=False):
         t1 = time() - t1
 
         num_targets = len(targets)
-        lloss = problem.utility_loss(x, targets)
-        gloss = problem.utility_loss(x, "all")
+        loss = problem.utility_loss(x, "all")
 
         print(dedent("""\
             x_bar =
@@ -127,14 +126,13 @@ def pp(problem, max_iters, targets="attributes", can_critique=False):
             features = {targets}
             |features| = {num_targets}
 
-            lloss = {lloss}
-            gloss = {gloss}
+            loss = {loss}
             is_satisfied = {is_satisfied}
             """).format(**locals()))
 
-        trace.append((gloss, t0 + t1))
+        trace.append((loss, t0 + t1))
         if is_satisfied:
-            if gloss > 0:
+            if loss > 0:
                 print("user is not satisfied, but can not improve item!")
             else:
                 print("user is satisfied!")
