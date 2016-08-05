@@ -45,6 +45,8 @@ def pp(problem, max_iters, targets="attributes", can_critique=False):
 
     Returns
     -------
+    num_iters : int
+        Number of iterations elapsed
     trace : list of numpy.ndarray of shape (num_features,)
         List of (loss, time) pairs for all iterations.
 
@@ -112,6 +114,7 @@ def pp(problem, max_iters, targets="attributes", can_critique=False):
         t1 = time() - t1
 
         num_targets = len(targets)
+
         loss = problem.utility_loss(x, "all")
 
         print(dedent("""\
@@ -140,4 +143,4 @@ def pp(problem, max_iters, targets="attributes", can_critique=False):
     else:
         print("user not satisfied, iterations elapsed")
 
-    return trace
+    return it, trace

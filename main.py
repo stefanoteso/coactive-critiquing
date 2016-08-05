@@ -36,6 +36,7 @@ METHODS = {
 def _get_experiment_name(args):
     return "_".join(map(str, [
         args.problem, args.method, args.num_users, args.max_iters,
+        args.critique_alpha, args.noise, args.sparsity,
         args.num_attributes, args.update, args.seed]))
 
 def _to_matrix(l, rows=None, cols=None):
@@ -87,7 +88,7 @@ def main():
     for i in range(args.num_users):
         print("==== USER {}/{} ====".format(i, args.num_users))
         problem = PROBLEMS[args.problem](args, rng)
-        trace = METHODS[args.method](args, problem)
+        num_iters, trace = METHODS[args.method](args, problem)
         losses, times = zip(*trace)
         all_losses.append(losses)
         all_times.append(times)
