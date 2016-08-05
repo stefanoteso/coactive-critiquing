@@ -210,7 +210,7 @@ class Problem(object):
         assert x.shape == (self.num_attributes,)
 
         targets = self.enumerate_features(features)
-        phi = self.phi(x, targets)
+        phi = self.phi(x, features)
 
         return np.dot(self.w_star[targets], phi[targets])
 
