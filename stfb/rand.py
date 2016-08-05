@@ -178,7 +178,4 @@ class RandProblem(Problem):
         }
         assignments = minizinc(PATH, data=data, output_vars=["x", "objective"], parallel=0)
 
-        x_bar = self.assignment_to_array(assignments[0]["x"])
-        utility_bar = np.dot(w_star, self.phi(x, "all"))
-
-        return x_bar
+        return self.assignment_to_array(assignments[0]["x"])
