@@ -18,26 +18,38 @@ set of int: ACTIVE_FEATURES;
 
 array[FEATURES] of float: W;
 array[FEATURES] of var int: phi;
-array[ATTRIBUTES] of bool: INPUT_X;
 array[ATTRIBUTES] of var bool: x;
-var float: objective;
-bool: IS_IMPROVEMENT_QUERY;
-int: MAX_CHANGES;
+array[ATTRIBUTES] of bool: INPUT_X;
+float: INPUT_UTILITY;
 
 {phis}
-
-constraint objective =
-    sum(j in ACTIVE_FEATURES)(W[j] * phi[j]);
-
-constraint IS_IMPROVEMENT_QUERY ->
-    sum(i in ATTRIBUTES)(
-        bool2int(x[i] != INPUT_X[i])) <= MAX_CHANGES;
 
 {solve}
 """
 
-_SATISFY = "solve satisfy;"
-_MAXIMIZE = "solve maximize objective;"
+_PHI = "solve satisfy;"
+
+_INFER = """\
+var float: objective;
+
+constraint objective =
+    sum(j in ACTIVE_FEATURES)(W[j] * phi[j]);
+
+solve maximize objective;
+"""
+
+_IMPROVE = """\
+var int: objective;
+
+constraint objective =
+    sum(i in ATTRIBUTES)(x[i] != INPUT_X[i]);
+
+constraint sum(j in ACTIVE_FEATURES)(W[j] * phi[j]) > INPUT_UTILITY;
+
+constraint objective >= 1;
+
+solve minimize objective;
+"""
 
 class RandProblem(Problem):
     """A randomly-constrained Boolean problem.
@@ -94,19 +106,18 @@ class RandProblem(Problem):
 
         PATH = "rand-phi.mzn"
         with open(PATH, "wb") as fp:
-            fp.write(_TEMPLATE.format(solve=_SATISFY).encode("utf-8"))
+            fp.write(_TEMPLATE.format(solve=_PHI).encode("utf-8"))
 
         data = {
             "N_ATTRIBUTES": self.num_attributes,
             "N_FEATURES": self.num_features,
-            "ACTIVE_FEATURES": set([1]),
-            "W": [0.0] * self.num_features,
+            "ACTIVE_FEATURES": set([1]), # doesn't matter
+            "W": [0.0] * self.num_features, # doesn't matter
             "x": self.array_to_assignment(x, bool),
-            "INPUT_X": ["false"] * self.num_attributes,
-            "IS_IMPROVEMENT_QUERY": "false",
-            "MAX_CHANGES": 0,
+            "INPUT_X": ["false"] * self.num_attributes, # doesn't matter
+            "INPUT_UTILITY": 0.0, # doesn't matter
         }
-        assignments = minizinc(PATH, data=data, output_vars=["phi", "objective"])
+        assignments = minizinc(PATH, data=data, output_vars=["phi"])
 
         phi = self.assignment_to_array(assignments[0]["phi"])
         mask = np.ones_like(phi, dtype=bool)
@@ -123,7 +134,7 @@ class RandProblem(Problem):
 
         PATH = "rand-infer.mzn"
         with open(PATH, "wb") as fp:
-            fp.write(_TEMPLATE.format(solve=_MAXIMIZE).encode("utf-8"))
+            fp.write(_TEMPLATE.format(solve=_INFER).encode("utf-8"))
 
         data = {
             "N_ATTRIBUTES": self.num_attributes,
@@ -131,8 +142,7 @@ class RandProblem(Problem):
             "ACTIVE_FEATURES": {j + 1 for j in targets},
             "W": self.array_to_assignment(w, float),
             "INPUT_X": ["false"] * self.num_attributes, # doesn't matter
-            "IS_IMPROVEMENT_QUERY": "false",
-            "MAX_CHANGES": 0,
+            "INPUT_UTILITY": 0.0, # doesn't matter
         }
         assignments = minizinc(PATH, data=data, output_vars=["x", "objective"])
 
@@ -141,8 +151,8 @@ class RandProblem(Problem):
     def query_improvement(self, x, features):
         assert x.shape == (self.num_attributes,)
 
-        # XXX this is noiseless...
         if self.utility_loss(x, "all") == 0:
+            # XXX this is noiseless
             return x
 
         w_star = np.array(self.w_star)
@@ -152,25 +162,23 @@ class RandProblem(Problem):
         targets = self.enumerate_features(features)
         assert (w_star[targets] != 0).any()
 
+        utility = np.dot(w_star, self.phi(x, "all"))
+
         PATH = "rand-improve.mzn"
+        with open(PATH, "wb") as fp:
+            fp.write(_TEMPLATE.format(solve=_IMPROVE).encode("utf-8"))
 
-        for max_changes in range(1, 3+1):
-            with open(PATH, "wb") as fp:
-                fp.write(_TEMPLATE.format(solve=_MAXIMIZE).encode("utf-8"))
+        data = {
+            "N_ATTRIBUTES": self.num_attributes,
+            "N_FEATURES": self.num_features,
+            "ACTIVE_FEATURES": {j + 1 for j in targets},
+            "W": self.array_to_assignment(w_star, float),
+            "INPUT_X": self.array_to_assignment(x, bool),
+            "INPUT_UTILITY": utility,
+        }
+        assignments = minizinc(PATH, data=data, output_vars=["x", "objective"])
 
-            data = {
-                "N_ATTRIBUTES": self.num_attributes,
-                "N_FEATURES": self.num_features,
-                "ACTIVE_FEATURES": {j + 1 for j in targets},
-                "W": self.array_to_assignment(w_star, float),
-                "INPUT_X": self.array_to_assignment(x, bool),
-                "IS_IMPROVEMENT_QUERY": "true",
-                "MAX_CHANGES": max_changes,
-            }
-            assignments = minizinc(PATH, data=data, output_vars=["x", "objective"])
-
-            x_bar = self.assignment_to_array(assignments[0]["x"])
-            if (x_bar != x).any():
-                break
+        x_bar = self.assignment_to_array(assignments[0]["x"])
+        utility_bar = np.dot(w_star, self.phi(x, "all"))
 
         return x_bar
