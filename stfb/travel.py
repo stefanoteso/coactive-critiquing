@@ -62,37 +62,53 @@ constraint forall(i in 1..T-1 where location[i+1] != NO_LOCATION)(
 
 % configuration
 array[1..3*T-1] of var int: x;
-constraint forall(i in 1..T)(x[i] = location[i]);
-constraint forall(i in 1..T)(x[T+i] = duration[i]);
-constraint forall(i in 1..T-1)(x[2*T+i] = travel[i]);
+constraint forall(t in 1..T)(x[t] = location[t]);
+constraint forall(t in 1..T)(x[T+t] = duration[t]);
+constraint forall(t in 1..T-1)(x[2*T+t] = travel[t]);
+array[1..3*T-1] of int: INPUT_X;
 
 % features
 int: N_FEATURES;
 set of int: FEATURES = 1..N_FEATURES;
 
+set of int: ACTIVE_FEATURES;
+
 array[FEATURES] of float: W;
 array[FEATURES] of var float: phi;
+float: INPUT_UTILITY;
 
 {phis}
 
 {solve}
-
-% support for the improvement query
-bool: IS_IMPROVEMENT_QUERY;
-array[1..3*T-1] of int: INPUT_X;
-constraint IS_IMPROVEMENT_QUERY ->
-    (sum(attr in 1..3*T-1)(bool2int(x[attr] != INPUT_X[attr])) <= 3);
 """
 
-_SOLVE_PHI = "solve satisfy;"
-_SOLVE_INFER_IMPROVE = "solve maximize sum(feat in FEATURES)(W[feat] * phi[feat]);"
+_PHI = "solve satisfy;"
+
+_INFER = """\
+var float: objective =
+    sum(feat in ACTIVE_FEATURES)(W[feat] * phi[feat]);
+
+solve maximize objective;
+"""
+
+_IMPROVE = """\
+var int: objective =
+    sum(t in 1..3*T-1)(x[t] != INPUT_X[t]);
+
+constraint sum(feat in ACTIVE_FEATURES)(W[feat] * phi[feat]) > INPUT_UTILITY;
+
+constraint objective >= 1;
+
+solve minimize objective;
+"""
 
 N_LOCATIONS = 10
 N_ACTIVITIES = 10
 
 class TravelProblem(Problem):
-    def __init__(self, horizon=10, rng=None):
+    def __init__(self, horizon=10, noise=0.1, rng=None):
         rng = check_random_state(rng)
+        self.noise, self.rng = noise, rng
 
         self._horizon = horizon
         num_attributes = 3 * horizon - 1
@@ -158,8 +174,12 @@ class TravelProblem(Problem):
         num_base_features = j - 1
         num_features = num_base_features
 
+        global _TEMPLATE
+        _TEMPLATE = \
+            _TEMPLATE.format(phis="\n".join(self.features), solve="{solve}")
+
         # Sample the weight vector
-        w_star = spnormal(num_features, sparsity=0.2, rng=rng, dtype=np.float32)
+        w_star = rng.normal(0, 1, size=num_features).astype(np.float32)
 
         super().__init__(num_attributes, num_base_features, num_features,
                          w_star)
@@ -169,51 +189,50 @@ class TravelProblem(Problem):
         return float(max(N_LOCATIONS, N_ACTIVITIES))
 
     def phi(self, x, features):
-        features = self.enumerate_features(features)
         assert x.shape == (self.num_attributes,)
 
-        phis = "\n".join([self.features[j] for j in features])
-        solve = _SOLVE_PHI;
-        problem = _TEMPLATE.format(**locals())
+        targets = self.enumerate_features(features)
 
         PATH = "travel-phi.mzn"
         with open(PATH, "wb") as fp:
-            fp.write(problem.encode("utf-8"))
+            fp.write(_TEMPLATE.format(solve=_PHI).encode("utf-8"))
 
         data = {
-            "N_FEATURES": len(features),
+            "N_FEATURES": self.num_features,
+            "ACTIVE_FEATURES": set([1]), # doesn't matter
             "T": self._horizon,
             "N_LOCATIONS": N_LOCATIONS,
             "N_ACTIVITIES": N_ACTIVITIES,
             "LOCATION_ACTIVITIES": self._location_activities,
             "LOCATION_COST": self._location_cost,
             "TRAVEL_TIME": self._travel_time,
-            "W": [0] * len(features), # doesn't matter
+            "W": [0] * self.num_features, # doesn't matter
             "x": self.array_to_assignment(x, int),
             "INPUT_X": [0] * self.num_attributes, # doesn't matter
-            "IS_IMPROVEMENT_QUERY": "false",
+            "INPUT_UTILITY": 0.0, # doesn't matter
         }
         assignments = minizinc(PATH, data=data)
 
-        return self.assignment_to_array(assignments[0]["phi"])
+        phi = self.assignment_to_array(assignments[0]["phi"])
+        mask = np.ones_like(phi, dtype=bool)
+        mask[targets] = False
+        phi[mask] = 0.0
+
+        return phi
 
     def infer(self, w, features):
+        assert w.shape == (self.num_features,)
+
         features = self.enumerate_features(features)
-        assert w.shape == (len(features),)
-
-        if (w == 0).all():
-            raise RuntimeError("inference with w == 0 is undefined")
-
-        phis = "\n".join([self.features[j] for j in features])
-        solve = _SOLVE_INFER_IMPROVE;
-        problem = _TEMPLATE.format(**locals())
+        assert (w[features] != 0).any()
 
         PATH = "travel-infer.mzn"
         with open(PATH, "wb") as fp:
-            fp.write(problem.encode("utf-8"))
+            fp.write(_TEMPLATE.format(solve=_INFER).encode("utf-8"))
 
         data = {
-            "N_FEATURES": len(features),
+            "N_FEATURES": self.num_features,
+            "ACTIVE_FEATURES": {j + 1 for j in features}, # doesn't matter
             "T": self._horizon,
             "N_LOCATIONS": N_LOCATIONS,
             "N_ACTIVITIES": N_ACTIVITIES,
@@ -222,30 +241,35 @@ class TravelProblem(Problem):
             "TRAVEL_TIME": self._travel_time,
             "W": self.array_to_assignment(w, float),
             "INPUT_X": [0] * self.num_attributes, # doesn't matter
-            "IS_IMPROVEMENT_QUERY": "false",
+            "INPUT_UTILITY": 0.0, # doesn't matter
         }
         assignments = minizinc(PATH, data=data)
 
         return self.assignment_to_array(assignments[0]["x"])
 
     def query_improvement(self, x, features):
-        features = self.enumerate_features(features)
         assert x.shape == (self.num_attributes,)
 
-        w_star = self.w_star[features]
-        if (w_star == 0).all():
-            raise RuntimeError("inference with w == 0 is undefined")
+        if self.utility_loss(x, "all") == 0:
+            # XXX this is noiseless
+            return x
 
-        phis = "\n".join([self.features[j] for j in features])
-        solve = _SOLVE_INFER_IMPROVE;
-        problem = _TEMPLATE.format(**locals())
+        w_star = np.array(self.w_star)
+        if self.noise:
+            w_star += self.rng.normal(0, self.noise, size=w_star.shape).astype(np.float32)
+
+        features = self.enumerate_features(features)
+        assert (w_star[features] != 0).any()
+
+        utility = np.dot(self.w_star, self.phi(x, "all"))
 
         PATH = "travel-improve.mzn"
         with open(PATH, "wb") as fp:
-            fp.write(problem.encode("utf-8"))
+            fp.write(_TEMPLATE.format(solve=_IMPROVE).encode("utf-8"))
 
         data = {
-            "N_FEATURES": len(features),
+            "N_FEATURES": self.num_features,
+            "ACTIVE_FEATURES": {j + 1 for j in features}, # doesn't matter
             "T": self._horizon,
             "N_LOCATIONS": N_LOCATIONS,
             "N_ACTIVITIES": N_ACTIVITIES,
@@ -254,9 +278,8 @@ class TravelProblem(Problem):
             "TRAVEL_TIME": self._travel_time,
             "W": self.array_to_assignment(w_star, float),
             "INPUT_X": self.array_to_assignment(x, int),
-            "IS_IMPROVEMENT_QUERY": "true",
+            "INPUT_UTILITY": utility,
         }
         assignments = minizinc(PATH, data=data)
 
-        x_bar = self.assignment_to_array(assignments[0]["x"])
-        return x_bar
+        return self.assignment_to_array(assignments[0]["x"])
