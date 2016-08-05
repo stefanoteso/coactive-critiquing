@@ -14,6 +14,10 @@ PROBLEMS = {
         lambda args, rng:
             stfb.ContRandProblem(args.num_attributes, noise=args.noise,
                                  sparsity=args.sparsity, rng=rng),
+    "canvas":
+        lambda args, rng:
+            stfb.CanvasProblem(noise=args.noise, sparsity=args.sparsity,
+                               rng=rng),
     "pc":
         lambda args, rng: stfb.PCProblem(rng=rng),
     "travel":
