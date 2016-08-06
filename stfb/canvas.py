@@ -103,7 +103,7 @@ class CanvasProblem(Problem):
             "INPUT_X": [0.0] * self.num_attributes, # doesn't matter
             "INPUT_UTILITY": 0.0, # doesn't matter
         }
-        assignments = minizinc(PATH, data=data, output_vars=["phi"])
+        assignments = minizinc(PATH, data=data, output_vars=["phi"], keep=True)
 
         phi = self.assignment_to_array(assignments[0]["phi"])
         mask = np.ones_like(phi, dtype=bool)
@@ -129,7 +129,8 @@ class CanvasProblem(Problem):
             "INPUT_X": [0.0] * self.num_attributes, # doesn't matter
             "INPUT_UTILITY": 0.0, # doesn't matter
         }
-        assignments = minizinc(PATH, data=data, output_vars=["x", "objective"], keep=True)
+        assignments = minizinc(PATH, data=data, output_vars=["x", "objective"],
+                               keep=True, parallel=0)
 
         return self.assignment_to_array(assignments[0]["x"])
 
@@ -160,6 +161,7 @@ class CanvasProblem(Problem):
             "INPUT_X": self.array_to_assignment(x, float),
             "INPUT_UTILITY": utility,
         }
-        assignments = minizinc(PATH, data=data, output_vars=["x", "objective"], parallel=0)
+        assignments = minizinc(PATH, data=data, output_vars=["x", "objective"],
+                               keep=True, parallel=0)
 
         return self.assignment_to_array(assignments[0]["x"])
