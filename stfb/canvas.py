@@ -34,7 +34,7 @@ var float: objective =
     sum(j in ACTIVE_FEATURES)(W[j] * phi[j]);
 
 solve ::
-    float_search(x, 0.001, first_fail, indomain_middle, complete)
+    float_search(x, 0.001, first_fail, indomain_split, complete)
     maximize objective;
 """
 
@@ -46,7 +46,9 @@ constraint sum(j in ACTIVE_FEATURES)(W[j] * phi[j]) > INPUT_UTILITY;
 
 constraint objective >= 1;
 
-solve minimize objective;
+solve ::
+    float_search(x, 0.001, first_fail, indomain_splot, complete)
+    minimize objective;
 """
 
 class CanvasProblem(Problem):
