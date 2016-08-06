@@ -47,7 +47,7 @@ constraint sum(j in ACTIVE_FEATURES)(W[j] * phi[j]) > INPUT_UTILITY;
 constraint objective >= 1;
 
 solve ::
-    float_search(x, 0.001, first_fail, indomain_splot, complete)
+    float_search(x, 0.001, first_fail, indomain_split, complete)
     minimize objective;
 """
 
