@@ -104,7 +104,7 @@ class CanvasProblem(Problem):
             "TRUTH_VALUES": {-1, 1},
             "ACTIVE_FEATURES": set([1]), # doesn't matter
             "W": [0.0] * self.num_features, # doesn't matter
-            "x": self.array_to_assignment(x, bool),
+            "x": self.array_to_assignment(x, int),
             "INPUT_X": [1] * self.num_attributes, # doesn't matter
             "INPUT_UTILITY": 0.0, # doesn't matter
         }
