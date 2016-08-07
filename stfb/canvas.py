@@ -41,7 +41,7 @@ _IMPROVE = """\
 var int: objective =
     sum(i in ATTRIBUTES)(x[i] != INPUT_X[i]);
 
-constraint sum(j in ACTIVE_FEATURES)(W[j] * phi[j]) > INPUT_UTILITY;
+constraint sum(j in FEATURES)(W[j] * phi[j]) > INPUT_UTILITY;
 
 constraint objective >= 1;
 
