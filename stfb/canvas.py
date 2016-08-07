@@ -66,6 +66,8 @@ class CanvasProblem(Problem):
                 ymin, ymax = reorder(*rng.randint(1, 100+1, size=2))
                 rects.append([xmin, xmax, ymin, ymax])
 
+        print("rects =\n{}".format("\n".join(map(str, rects))))
+
         self.features, cliques = [], []
         for j, (xmin, xmax, ymin, ymax) in enumerate(rects):
             is_inside = "x[1] >= {xmin} /\\ x[1] <= {xmax} /\\ x[2] >= {ymin} /\\ x[2] <= {ymax}".format(**locals())
