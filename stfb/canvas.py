@@ -18,8 +18,8 @@ set of int: ACTIVE_FEATURES;
 
 array[FEATURES] of float: W;
 array[FEATURES] of var int: phi;
-array[ATTRIBUTES] of var -1.0..1.0: x;
-array[ATTRIBUTES] of -1.0..1.0: INPUT_X;
+array[ATTRIBUTES] of var 1..100: x;
+array[ATTRIBUTES] of 1..100: INPUT_X;
 float: INPUT_UTILITY;
 
 {phis}
@@ -33,9 +33,7 @@ _INFER = """\
 var float: objective =
     sum(j in ACTIVE_FEATURES)(W[j] * phi[j]);
 
-solve ::
-    float_search(x, 0.001, first_fail, indomain_split, complete)
-    maximize objective;
+solve maximize objective;
 """
 
 _IMPROVE = """\
@@ -46,34 +44,28 @@ constraint sum(j in ACTIVE_FEATURES)(W[j] * phi[j]) > INPUT_UTILITY;
 
 constraint objective >= 1;
 
-solve ::
-    float_search(x, 0.001, first_fail, indomain_split, complete)
-    minimize objective;
+solve minimize objective;
 """
 
 class CanvasProblem(Problem):
-    def __init__(self, num_features=4, noise=0.1, sparsity=0.2, rng=None):
+    def __init__(self, num_features=100, noise=0.1, sparsity=0.2, rng=None):
         rng = check_random_state(rng)
         self.noise, self.rng = noise, rng
 
-        num_attributes = 2
+        reorder = lambda a, b: (min(a, b), max(a, b))
 
         self.features, cliques = [], []
         for j in range(num_features):
-            x1_intercept, x2_intercept = rng.uniform(0.5, 0.75, size=2)
-            if (j % 4) in (2, 3):
-                x1_intercept = -x1_intercept
-            if (j % 4) in (1, 2):
-                x2_intercept = -x2_intercept
-            coeff = [-1 / x1_intercept, -1 / x2_intercept]
-            inequality = "{} * x[1] + {} * x[2] + 1 >= 0".format(*coeff)
-            feature = "constraint phi[{}] = 2 * ({}) - 1;".format(j + 1, inequality)
+            xmin, xmax = reorder(*rng.randint(1, 100+1, size=2))
+            ymin, ymax = reorder(*rng.randint(1, 100+1, size=2))
+            is_inside = "x[1] >= {xmin} /\\ x[1] <= {xmax} /\\ x[2] >= {ymin} /\\ x[2] <= {ymax}".format(**locals())
+            feature = "constraint phi[{}] = 2 * ({}) - 1;".format(j + 1, is_inside)
             self.features.append(feature)
             cliques.append([0, 1])
-        num_features = len(self.features)
 
-        # XXX arbitrary
-        num_base_features = 2
+        num_attributes = 2
+        num_base_features = 2               # XXX arbitrary
+        num_features = len(self.features)
 
         global _TEMPLATE
         _TEMPLATE = \
@@ -102,7 +94,7 @@ class CanvasProblem(Problem):
             "ACTIVE_FEATURES": set([1]), # doesn't matter
             "W": [0.0] * self.num_features, # doesn't matter
             "x": self.array_to_assignment(x, bool),
-            "INPUT_X": [0.0] * self.num_attributes, # doesn't matter
+            "INPUT_X": [1] * self.num_attributes, # doesn't matter
             "INPUT_UTILITY": 0.0, # doesn't matter
         }
         assignments = minizinc(PATH, data=data, output_vars=["phi"], keep=True)
@@ -128,7 +120,7 @@ class CanvasProblem(Problem):
             "N_FEATURES": self.num_features,
             "ACTIVE_FEATURES": {j + 1 for j in targets},
             "W": self.array_to_assignment(w, float),
-            "INPUT_X": [0.0] * self.num_attributes, # doesn't matter
+            "INPUT_X": [1] * self.num_attributes, # doesn't matter
             "INPUT_UTILITY": 0.0, # doesn't matter
         }
         assignments = minizinc(PATH, data=data, output_vars=["x", "objective"],
@@ -160,7 +152,7 @@ class CanvasProblem(Problem):
             "N_FEATURES": self.num_features,
             "ACTIVE_FEATURES": {j + 1 for j in targets},
             "W": self.array_to_assignment(w_star, float),
-            "INPUT_X": self.array_to_assignment(x, float),
+            "INPUT_X": self.array_to_assignment(x, int),
             "INPUT_UTILITY": utility,
         }
         assignments = minizinc(PATH, data=data, output_vars=["x", "objective"],
