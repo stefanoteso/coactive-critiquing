@@ -48,28 +48,30 @@ constraint objective >= 1;
 solve minimize objective;
 """
 
+_rects = None
+
 class CanvasProblem(Problem):
     def __init__(self, num_features=100, noise=0.1, sparsity=0.2, rng=None):
         rng = check_random_state(rng)
         self.noise, self.rng = noise, rng
 
-        if hasattr(CanvasProblem, "rects"):
-            rects = CanvasProblem.rects
-        else:
-            # XXX this should be done offline
+        # XXX this should be done offline
+        global _rects
+
+        if _rects is None:
 
             reorder = lambda a, b: (min(a, b), max(a, b))
 
-            rects = []
+            _rects = []
             for j in range(num_features):
                 xmin, xmax = reorder(*rng.randint(1, 100+1, size=2))
                 ymin, ymax = reorder(*rng.randint(1, 100+1, size=2))
-                rects.append([xmin, xmax, ymin, ymax])
+                _rects.append([xmin, xmax, ymin, ymax])
 
-        print("rects =\n{}".format("\n".join(map(str, rects))))
+            print("rects =\n{}".format("\n".join(map(str, _rects))))
 
         self.features, cliques = [], []
-        for j, (xmin, xmax, ymin, ymax) in enumerate(rects):
+        for j, (xmin, xmax, ymin, ymax) in enumerate(_rects):
             is_inside = "x[1] >= {xmin} /\\ x[1] <= {xmax} /\\ x[2] >= {ymin} /\\ x[2] <= {ymax}".format(**locals())
             feature = "constraint phi[{}] = 2 * ({}) - 1;".format(j + 1, is_inside)
             self.features.append(feature)
