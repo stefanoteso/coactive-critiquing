@@ -104,8 +104,9 @@ def pp(problem, max_iters, targets="attributes", can_critique=False):
             """).format(**locals()))
 
         t1 = time()
+        delta = problem.phi(x_bar, targets) - problem.phi(x, targets)
         if rho is None:
-            w += problem.phi(x_bar, targets) - problem.phi(x, targets)
+            w += delta
         else:
             w[rho] = sign * problem.get_feature_radius()
             targets.append(rho)
@@ -120,6 +121,9 @@ def pp(problem, max_iters, targets="attributes", can_critique=False):
             {x_bar}
             phi(x_bar) =
             {phi_bar}
+
+            phi(x_bar) - phi(x) =
+            {delta}
 
             new w =
             {w}
