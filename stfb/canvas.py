@@ -15,9 +15,10 @@ int: N_FEATURES;
 set of int: FEATURES = 1..N_FEATURES;
 
 set of int: ACTIVE_FEATURES;
+set of int: TRUTH_VALUES;
 
 array[FEATURES] of float: W;
-array[FEATURES] of var int: phi;
+array[FEATURES] of var TRUTH_VALUES: phi;
 array[ATTRIBUTES] of var 1..100: x;
 array[ATTRIBUTES] of 1..100: INPUT_X;
 float: INPUT_UTILITY;
@@ -52,12 +53,21 @@ class CanvasProblem(Problem):
         rng = check_random_state(rng)
         self.noise, self.rng = noise, rng
 
-        reorder = lambda a, b: (min(a, b), max(a, b))
+        if hasattr(CanvasProblem, "rects"):
+            rects = CanvasProblem.rects
+        else:
+            # XXX this should be done offline
+
+            reorder = lambda a, b: (min(a, b), max(a, b))
+
+            rects = []
+            for j in range(num_features):
+                xmin, xmax = reorder(*rng.randint(1, 100+1, size=2))
+                ymin, ymax = reorder(*rng.randint(1, 100+1, size=2))
+                rects.append([xmin, xmax, ymin, ymax])
 
         self.features, cliques = [], []
-        for j in range(num_features):
-            xmin, xmax = reorder(*rng.randint(1, 100+1, size=2))
-            ymin, ymax = reorder(*rng.randint(1, 100+1, size=2))
+        for j, (xmin, xmax, ymin, ymax) in enumerate(rects):
             is_inside = "x[1] >= {xmin} /\\ x[1] <= {xmax} /\\ x[2] >= {ymin} /\\ x[2] <= {ymax}".format(**locals())
             feature = "constraint phi[{}] = 2 * ({}) - 1;".format(j + 1, is_inside)
             self.features.append(feature)
@@ -91,6 +101,7 @@ class CanvasProblem(Problem):
 
         data = {
             "N_FEATURES": self.num_features,
+            "TRUTH_VALUES": {-1, 1},
             "ACTIVE_FEATURES": set([1]), # doesn't matter
             "W": [0.0] * self.num_features, # doesn't matter
             "x": self.array_to_assignment(x, bool),
@@ -118,6 +129,7 @@ class CanvasProblem(Problem):
 
         data = {
             "N_FEATURES": self.num_features,
+            "TRUTH_VALUES": {-1, 1},
             "ACTIVE_FEATURES": {j + 1 for j in targets},
             "W": self.array_to_assignment(w, float),
             "INPUT_X": [1] * self.num_attributes, # doesn't matter
@@ -150,6 +162,7 @@ class CanvasProblem(Problem):
 
         data = {
             "N_FEATURES": self.num_features,
+            "TRUTH_VALUES": {-1, 1},
             "ACTIVE_FEATURES": {j + 1 for j in targets},
             "W": self.array_to_assignment(w_star, float),
             "INPUT_X": self.array_to_assignment(x, int),
