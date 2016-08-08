@@ -176,6 +176,7 @@ class Problem(object):
 
         targets = self.enumerate_features(features)
         if len(targets) == self.num_features:
+            print("Warning: requesting critique in full feature space")
             return None, None
 
         u = self.utility(x, "all")
