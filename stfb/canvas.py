@@ -41,7 +41,7 @@ _IMPROVE = """\
 var int: objective =
     sum(i in ATTRIBUTES)(x[i] != INPUT_X[i]);
 
-constraint sum(j in FEATURES)(W[j] * phi[j]) > INPUT_UTILITY;
+constraint sum(j in ACTIVE_FEATURES)(W[j] * phi[j]) > INPUT_UTILITY;
 
 constraint objective >= 1;
 
@@ -158,7 +158,7 @@ class CanvasProblem(Problem):
         targets = self.enumerate_features(features)
         assert (w_star[targets] != 0).any()
 
-        utility = np.dot(w_star, self.phi(x, "all"))
+        utility = np.dot(w_star, self.phi(x, targets))
 
         PATH = "canvas-improve.mzn"
         with open(PATH, "wb") as fp:
@@ -175,4 +175,10 @@ class CanvasProblem(Problem):
         assignments = minizinc(PATH, data=data, output_vars=["x", "objective"],
                                keep=True, parallel=0)
 
-        return self.assignment_to_array(assignments[0]["x"])
+        x_bar = self.assignment_to_array(assignments[0]["x"])
+        assert (x != x_bar).any(), (x, x_bar)
+
+        utility_bar = np.dot(w_star, self.phi(x_bar, targets))
+        assert utility_bar > utility, (utility_bar, ">", utility)
+
+        return x_bar
