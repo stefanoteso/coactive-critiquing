@@ -43,7 +43,7 @@ var int: objective =
 
 constraint
     sum(j in ACTIVE_FEATURES)(W[j] * phi[j]) >
-        sum(j in ACTIVE_FEATURES)(W[j] * INPUT_PHI[j]);
+        sum(j in ACTIVE_FEATURES)(W[j] * INPUT_PHI[j]) + 1e-6;
 
 constraint objective >= 1;
 
@@ -182,6 +182,8 @@ class CanvasProblem(Problem):
 
         utility = np.dot(w_star, self.phi(x, targets))
         utility_bar = np.dot(w_star, self.phi(x_bar, targets))
-        assert utility_bar > utility, (utility_bar, ">", utility)
+        assert utility_bar > utility, \
+            "u^k({}) = {} is not larger than u^k({}) = {}".format(
+                x_bar, utility_bar, x, utility)
 
         return x_bar
