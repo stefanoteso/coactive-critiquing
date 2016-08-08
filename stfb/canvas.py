@@ -78,7 +78,7 @@ class CanvasProblem(Problem):
             cliques.append([0, 1])
 
         num_attributes = 2
-        num_base_features = 2               # XXX arbitrary
+        num_base_features = 2 # XXX arbitrary
         num_features = len(self.features)
 
         global _TEMPLATE
@@ -89,7 +89,8 @@ class CanvasProblem(Problem):
                             sparsity=sparsity, rng=rng).astype(np.float32)
         w_star = np.abs(w_star)
 
-        super().__init__(num_attributes, num_attributes, num_features, w_star)
+        super().__init__(num_attributes, num_base_features, num_features,
+                         w_star)
 
     def get_feature_radius(self):
         return 1.0
