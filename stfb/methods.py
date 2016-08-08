@@ -13,10 +13,6 @@ from time import time
 # NOTE different configurations may have the same utility, so the termination
 # condition is looser than strictly required
 
-# TODO exponentiated update for sparse weights with clamping
-
-# TODO L1 SVM variant
-
 # TODO the 'perturbed' pp algorithm is preferred for noisy users.
 
 def pp(problem, max_iters, targets="attributes", can_critique=False):
@@ -80,11 +76,17 @@ def pp(problem, max_iters, targets="attributes", can_critique=False):
         t0 = time() - t0
 
         x_bar = problem.query_improvement(x, "all")
+
+        t1 = time()
         is_satisfied = (x == x_bar).all()
 
+        delta = problem.phi(x_bar, targets) - problem.phi(x, targets)
+
         rho, sign = None, None
-        if not is_satisfied and can_critique:
+        if can_critique and not is_satisfied and (delta == 0).all():
             rho, sign = problem.query_critique(x, x_bar, targets)
+            assert rho > 0
+        t1 = time() - t1
 
         phi = problem.phi(x, "all")
         phi_bar = problem.phi(x_bar, "all")
@@ -103,14 +105,14 @@ def pp(problem, max_iters, targets="attributes", can_critique=False):
             sign = {sign}
             """).format(**locals()))
 
-        t1 = time()
-        delta = problem.phi(x_bar, targets) - problem.phi(x, targets)
+        t2 = time()
         if rho is None:
+            assert (delta != 0).any(), "phi(x) and phi(x_bar) projections are identical"
             w += delta
         else:
             w[rho] = sign * problem.get_feature_radius()
             targets.append(rho)
-        t1 = time() - t1
+        t2 = time() - t2
 
         num_targets = len(targets)
 
