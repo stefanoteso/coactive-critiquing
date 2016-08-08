@@ -175,16 +175,7 @@ class Problem(object):
         assert x.shape == (self.num_attributes,)
 
         targets = self.enumerate_features(features)
-        if len(targets) == self.num_features:
-            print("Warning: requesting critique in full feature space")
-            return None, None
-
-        u = self.utility(x, "all")
-        loss_bar = self.utility(x_bar, "all") - u
-        loss_star = self.utility(self.x_star, "all") - u
-
-        if loss_bar > (self.critique_alpha * loss_star):
-            return None, None
+        assert len(targets) < self.num_features, "requested critique in full feature space"
 
         scores = self.w_star * self.phi(x, "all")
         scores[targets] = np.nan
