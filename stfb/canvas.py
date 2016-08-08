@@ -125,7 +125,9 @@ class CanvasProblem(Problem):
         assert w.shape == (self.num_features,)
 
         targets = self.enumerate_features(features)
-        #assert (w[targets] != 0).any()
+        targets = self.enumerate_features(features)
+        if (w[targets] == 0).all():
+            print("Warning: all-zero w!")
 
         PATH = "canvas-infer.mzn"
         with open(PATH, "wb") as fp:
