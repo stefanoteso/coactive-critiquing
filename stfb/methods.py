@@ -75,6 +75,7 @@ def pp(problem, max_iters, targets="attributes", can_critique=False):
         x = problem.infer(w, targets)
         t0 = time() - t0
 
+        loss = problem.utility_loss(x, "all")
         x_bar = problem.query_improvement(x, "all")
 
         t1 = time()
@@ -100,23 +101,25 @@ def pp(problem, max_iters, targets="attributes", can_critique=False):
             {x}
             phi(x) =
             {phi}
+            loss = {loss}
 
             rho = {rho}
             sign = {sign}
+
+            is_satisfied = {is_satisfied}
             """).format(**locals()))
 
         t2 = time()
-        if rho is None:
-            assert (delta != 0).any(), "phi(x) and phi(x_bar) projections are identical"
-            w += delta
-        else:
-            w[rho] = sign * problem.get_feature_radius()
-            targets.append(rho)
-        t2 = time() - t2
+        if not is_satisfied:
+            if rho is None:
+                assert not can_critique or (delta != 0).any(), "phi(x) and phi(x_bar) projections are identical"
+                w += delta
+            else:
+                w[rho] = sign * problem.get_feature_radius()
+                targets.append(rho)
+            t2 = time() - t2
 
         num_targets = len(targets)
-
-        loss = problem.utility_loss(x, "all")
 
         print(dedent("""\
             x_bar =
@@ -132,9 +135,6 @@ def pp(problem, max_iters, targets="attributes", can_critique=False):
 
             features = {targets}
             |features| = {num_targets}
-
-            loss = {loss}
-            is_satisfied = {is_satisfied}
             """).format(**locals()))
 
         trace.append((loss, t0 + t1))
