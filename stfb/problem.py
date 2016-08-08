@@ -47,25 +47,19 @@ class Problem(object):
         The number of features
     w_star : numpy.ndarray of shape (num_features,)
         The optimal, latent weight vector.
-    critique_alpha : float in [0, 1]
-        Threshold used to trigger critiques.
     """
-    def __init__(self, num_attributes, num_base_features, num_features, w_star,
-                 critique_alpha=0.1):
+    def __init__(self, num_attributes, num_base_features, num_features, w_star):
         if not (0 < num_attributes):
             raise ValueError("invalid number of attributes")
         if not (0 < num_base_features <= num_features):
             raise ValueError("invalid number of features")
         if w_star.shape != (num_features,):
             raise ValueError("mismatching w_star")
-        if not (0.0 <= critique_alpha <= 1.0):
-            raise ValueError("invalid critique_alpha")
 
         self.num_attributes = num_attributes
         self.num_base_features = num_base_features
         self.num_features = num_features
         self.w_star = w_star
-        self.critique_alpha = critique_alpha
 
         self.x_star = self.infer(self.w_star, "all")
         assert self.x_star.shape == (num_attributes,), \
