@@ -5,7 +5,7 @@ from pymzn import minizinc
 from itertools import product, combinations
 from sklearn.utils import check_random_state
 
-from . import Problem, sdepnormal
+from . import Problem
 
 _TEMPLATE = """\
 int: N_ATTRIBUTES = 2;
@@ -17,7 +17,7 @@ set of int: FEATURES = 1..N_FEATURES;
 set of int: ACTIVE_FEATURES;
 set of int: TRUTH_VALUES;
 
-array[FEATURES] of float: W;
+array[FEATURES] of int: W;
 array[FEATURES] of var TRUTH_VALUES: phi;
 array[FEATURES] of var TRUTH_VALUES: INPUT_PHI;
 array[ATTRIBUTES] of var 1..100: x;
@@ -31,7 +31,7 @@ array[ATTRIBUTES] of 1..100: INPUT_X;
 _PHI = "solve satisfy;"
 
 _INFER = """\
-var float: objective =
+var int: objective =
     sum(j in ACTIVE_FEATURES)(W[j] * phi[j]);
 
 solve maximize objective;
@@ -72,27 +72,22 @@ class CanvasProblem(Problem):
 
             print("rects =\n{}".format("\n".join(map(str, _rects))))
 
-        self.features, cliques = [], []
+        self.features = []
         for j, (xmin, xmax, ymin, ymax) in enumerate(_rects):
             is_inside = "x[1] >= {xmin} /\\ x[1] <= {xmax} /\\ x[2] >= {ymin} /\\ x[2] <= {ymax}".format(**locals())
             feature = "constraint phi[{}] = 2 * ({}) - 1;".format(j + 1, is_inside)
             self.features.append(feature)
-            cliques.append([0, 1])
-
-        num_attributes = 2
-        num_base_features = 2 # XXX arbitrary
         num_features = len(self.features)
 
         global _TEMPLATE
         _TEMPLATE = \
             _TEMPLATE.format(phis="\n".join(self.features), solve="{solve}")
 
-        w_star = sdepnormal(num_attributes, num_features, cliques,
-                            sparsity=sparsity, rng=rng).astype(np.float32)
-        w_star = np.abs(w_star)
+        w_star = 2 * rng.randint(0, 2, size=num_features) - 1
+        if sparsity < 1.0:
+            raise NotImplementedError()
 
-        super().__init__(num_attributes, num_base_features, num_features,
-                         w_star)
+        super().__init__(2, 2, num_features, w_star)
 
     def get_feature_radius(self):
         return 1.0
@@ -110,7 +105,7 @@ class CanvasProblem(Problem):
             "N_FEATURES": self.num_features,
             "TRUTH_VALUES": {-1, 1},
             "ACTIVE_FEATURES": set([1]), # doesn't matter
-            "W": [0.0] * self.num_features, # doesn't matter
+            "W": [0] * self.num_features, # doesn't matter
             "x": self.array_to_assignment(x, int),
             "INPUT_X": [1] * self.num_attributes, # doesn't matter
             "INPUT_PHI": [1] * self.num_features, # doesn't matter
@@ -138,7 +133,7 @@ class CanvasProblem(Problem):
             "N_FEATURES": self.num_features,
             "TRUTH_VALUES": {-1, 1},
             "ACTIVE_FEATURES": {j + 1 for j in targets},
-            "W": self.array_to_assignment(w, float),
+            "W": self.array_to_assignment(w, int),
             "INPUT_X": [1] * self.num_attributes, # doesn't matter
             "INPUT_PHI": [1] * self.num_features, # doesn't matter
         }
@@ -156,6 +151,7 @@ class CanvasProblem(Problem):
 
         w_star = np.array(self.w_star)
         if self.noise:
+            raise NotImplementedError()
             w_star += self.rng.normal(0, self.noise, size=w_star.shape).astype(np.float32)
 
         targets = self.enumerate_features(features)
@@ -170,7 +166,7 @@ class CanvasProblem(Problem):
             "N_FEATURES": self.num_features,
             "TRUTH_VALUES": {-1, 1},
             "ACTIVE_FEATURES": {j + 1 for j in targets},
-            "W": self.array_to_assignment(w_star, float),
+            "W": self.array_to_assignment(w_star, int),
             "INPUT_X": self.array_to_assignment(x, int),
             "INPUT_PHI": self.array_to_assignment(phi, int),
         }
