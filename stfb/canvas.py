@@ -85,7 +85,9 @@ class CanvasProblem(Problem):
 
         w_star = 2 * rng.randint(0, 2, size=num_features) - 1
         if sparsity < 1.0:
-            raise NotImplementedError()
+            nnz_features = max(1, int(np.ceil(sparsity * num_features)))
+            zeros = rng.permutation(num_features)[nnz_features:]
+            w_star[zeros] = 0
 
         super().__init__(2, 2, num_features, w_star)
 
