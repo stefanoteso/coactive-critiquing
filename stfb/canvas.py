@@ -43,7 +43,7 @@ var int: objective =
 
 constraint
     sum(j in ACTIVE_FEATURES)(W[j] * phi[j]) >
-        sum(j in ACTIVE_FEATURES)(W[j] * INPUT_PHI[j]) + 1e-12;
+        sum(j in ACTIVE_FEATURES)(W[j] * INPUT_PHI[j]);
 
 constraint objective >= 1;
 
@@ -179,6 +179,9 @@ class CanvasProblem(Problem):
 
         x_bar = self.assignment_to_array(assignments[0]["x"])
         assert (x != x_bar).any(), (x, x_bar)
+
+        phi_bar = self.phi(x_bar, "all")
+        assert (phi != phi_bar).any()
 
         utility = np.dot(w_star, self.phi(x, targets))
         utility_bar = np.dot(w_star, self.phi(x_bar, targets))
