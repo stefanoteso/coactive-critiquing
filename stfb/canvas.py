@@ -43,7 +43,7 @@ var int: objective =
 
 constraint
     sum(j in ACTIVE_FEATURES)(W[j] * phi[j]) >
-        sum(j in ACTIVE_FEATURES)(W[j] * INPUT_PHI[j]) + 1e-6;
+        sum(j in ACTIVE_FEATURES)(W[j] * INPUT_PHI[j]) + 1e-12;
 
 constraint objective >= 1;
 
