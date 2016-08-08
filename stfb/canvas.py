@@ -19,9 +19,9 @@ set of int: TRUTH_VALUES;
 
 array[FEATURES] of float: W;
 array[FEATURES] of var TRUTH_VALUES: phi;
+array[FEATURES] of var TRUTH_VALUES: INPUT_PHI;
 array[ATTRIBUTES] of var 1..100: x;
 array[ATTRIBUTES] of 1..100: INPUT_X;
-float: INPUT_UTILITY;
 
 {phis}
 
@@ -41,7 +41,9 @@ _IMPROVE = """\
 var int: objective =
     sum(i in ATTRIBUTES)(x[i] != INPUT_X[i]);
 
-constraint sum(j in ACTIVE_FEATURES)(W[j] * phi[j]) > INPUT_UTILITY;
+constraint
+    sum(j in ACTIVE_FEATURES)(W[j] * phi[j]) >
+        sum(j in ACTIVE_FEATURES)(W[j] * INPUT_PHI[j]);
 
 constraint objective >= 1;
 
@@ -111,7 +113,7 @@ class CanvasProblem(Problem):
             "W": [0.0] * self.num_features, # doesn't matter
             "x": self.array_to_assignment(x, int),
             "INPUT_X": [1] * self.num_attributes, # doesn't matter
-            "INPUT_UTILITY": 0.0, # doesn't matter
+            "INPUT_PHI": [1] * self.num_features, # doesn't matter
         }
         assignments = minizinc(PATH, data=data, output_vars=["phi"], keep=True)
 
@@ -138,7 +140,7 @@ class CanvasProblem(Problem):
             "ACTIVE_FEATURES": {j + 1 for j in targets},
             "W": self.array_to_assignment(w, float),
             "INPUT_X": [1] * self.num_attributes, # doesn't matter
-            "INPUT_UTILITY": 0.0, # doesn't matter
+            "INPUT_PHI": [1] * self.num_features, # doesn't matter
         }
         assignments = minizinc(PATH, data=data, output_vars=["x", "objective"],
                                keep=True, parallel=0)
@@ -159,19 +161,18 @@ class CanvasProblem(Problem):
         targets = self.enumerate_features(features)
         assert (w_star[targets] != 0).any()
 
-        utility = np.dot(w_star, self.phi(x, targets))
-
         PATH = "canvas-improve.mzn"
         with open(PATH, "wb") as fp:
             fp.write(_TEMPLATE.format(solve=_IMPROVE).encode("utf-8"))
 
+        phi = self.phi(x, "all") # XXX the sum is on ACTIVE_FEATURES anyway
         data = {
             "N_FEATURES": self.num_features,
             "TRUTH_VALUES": {-1, 1},
             "ACTIVE_FEATURES": {j + 1 for j in targets},
             "W": self.array_to_assignment(w_star, float),
             "INPUT_X": self.array_to_assignment(x, int),
-            "INPUT_UTILITY": utility,
+            "INPUT_PHI": self.array_to_assignment(phi, int),
         }
         assignments = minizinc(PATH, data=data, output_vars=["x", "objective"],
                                keep=True, parallel=0)
@@ -179,6 +180,7 @@ class CanvasProblem(Problem):
         x_bar = self.assignment_to_array(assignments[0]["x"])
         assert (x != x_bar).any(), (x, x_bar)
 
+        utility = np.dot(w_star, self.phi(x, targets))
         utility_bar = np.dot(w_star, self.phi(x_bar, targets))
         assert utility_bar > utility, (utility_bar, ">", utility)
 
