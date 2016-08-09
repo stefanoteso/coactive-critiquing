@@ -204,9 +204,16 @@ class TravelProblem(Problem):
 
         num_base_features = j - 1
 
-        #
+        # Regions
         for region in range(1, self.N_REGIONS + 1):
             feature = "constraint phi[{j}] = 2 * (region_counts[{region}] + travel_time == T) - 1;".format(**locals())
+            self.features.append(feature)
+            j += 1
+        
+        # imply locations
+        for location1, location2 in combinations(range(1, N_LOCATIONS + 1), 2):
+            feature = "constraint phi[{j}] = 2 * (location_counts[{location1}] = 0 \/ location_counts[{location2}] > 0) - 1;".format(**locals())
+            feature = "constraint phi[{j}] = 2 * (location_counts[{location2}] = 0 \/ location_counts[{location1}] > 0) - 1;".format(**locals())
             self.features.append(feature)
             j += 1
             
