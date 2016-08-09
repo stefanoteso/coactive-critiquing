@@ -137,7 +137,8 @@ def pp(problem, max_iters, targets="attributes", can_critique=False):
             |features| = {num_targets}
             """).format(**locals()))
 
-        trace.append((loss, t0 + t1))
+        is_critique = rho is not None
+        trace.append((loss, t0 + t1, is_critique))
         if is_satisfied:
             if loss > 0:
                 print("user is not satisfied, but can not improve item!")
