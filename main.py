@@ -86,14 +86,15 @@ def main():
     pymzn.debug(args.verbose)
 
     # Run the main loop
-    all_losses, all_times = [], []
+    all_losses, all_times, all_is_critiques = [], [], []
     for i in range(args.num_users):
         print("==== USER {}/{} ====".format(i, args.num_users))
         problem = PROBLEMS[args.problem](args, rng)
         num_iters, trace = METHODS[args.method](args, problem)
-        losses, times = zip(*trace)
+        losses, times, is_critiques = zip(*trace)
         all_losses.append(losses)
         all_times.append(times)
+        all_is_critiques.append(is_critiques)
         print("\n\n")
 
     # Dump the results on disk
@@ -101,7 +102,8 @@ def main():
     data = {
         "experiment_args": args,
         "loss_matrix": _to_matrix(all_losses),
-        "time_matrix": _to_matrix(all_times)
+        "time_matrix": _to_matrix(all_times),
+        "is_critiques": _to_matrix(all_is_critiques),
     }
     with open("results_" + name + ".pickle", "wb") as fp:
         pickle.dump(data, fp)
