@@ -12,12 +12,9 @@ _METHOD_TO_COLORS = {
 }
 
 def _get_ticks(x):
-    return x / 10 # XXX
-    offset = np.floor(x / 10.0)
-    decimals = -np.log10(offset) + 1
-    return int(np.round(offset, decimals))
+    return np.floor(x / 10)
 
-def _draw_matrices(ax, matrices, args, cumulative=False):
+def _draw_matrices(ax, matrices, args, mean=False, cumulative=False):
     max_x, max_y = None, None
     for i, (matrix, arg) in enumerate(zip(matrices, args)):
         fg, bg = _METHOD_TO_COLORS[arg.method]
@@ -31,7 +28,10 @@ def _draw_matrices(ax, matrices, args, cumulative=False):
         if cumulative:
             matrix = matrix.cumsum(axis=1)
 
-        y = np.median(matrix, axis=0)
+        if mean:
+            y = np.mean(matrix, axis=0)
+        else:
+            y = np.median(matrix, axis=0)
         yerr = np.std(matrix, axis=0) / np.sqrt(matrix.shape[0])
 
         current_max_y = max(y + yerr)
@@ -41,8 +41,8 @@ def _draw_matrices(ax, matrices, args, cumulative=False):
         ax.plot(x, y, "o-", linewidth=2.5, color=fg)
         ax.fill_between(x, y - yerr, y + yerr, alpha=0.35, linewidth=0, color=bg)
 
-    ax.set_xlim([0, max_x])
-    ax.set_ylim([0, max_y])
+    ax.set_xlim([0, max_x + 0.1])
+    ax.set_ylim([0, max_y + 0.1])
 
     ax.set_xticks(np.arange(0, max_x, _get_ticks(max_x)))
     ax.set_yticks(np.arange(0, max_y, _get_ticks(max_y)))
@@ -65,20 +65,28 @@ def main():
     time_ax.set_xlabel("Number of iterations")
     time_ax.set_ylabel("Cumulative time (seconds)")
 
-    experiment_args, loss_matrices, time_matrices = [], [], []
+    query_fig, query_ax = plt.subplots(1, 1)
+    query_ax.set_xlabel("Number of iterations")
+    query_ax.set_ylabel("Number of critique queries")
+
+    experiment_args, loss_matrices, time_matrices, query_matrices = [], [], [], []
     for path in args.results_path:
         with open(path, "rb") as fp:
             data = pickle.load(fp)
         experiment_args.append(data["experiment_args"])
         loss_matrices.append(data["loss_matrix"])
         time_matrices.append(data["time_matrix"])
-        assert loss_matrices[-1].shape == time_matrices[-1].shape
-
-    _draw_matrices(loss_ax, loss_matrices, experiment_args, cumulative=False)
+        query_matrices.append(data["is_critiques"])
+        assert loss_matrices[-1].shape == \
+               time_matrices[-1].shape == \
+               query_matrices[-1].shape
+    _draw_matrices(loss_ax, loss_matrices, experiment_args)
     _draw_matrices(time_ax, time_matrices, experiment_args, cumulative=True)
+    _draw_matrices(query_ax, query_matrices, experiment_args, mean=True)
 
     loss_fig.savefig(args.png_basename + "_loss.png", bbox_inches="tight")
     time_fig.savefig(args.png_basename + "_time.png", bbox_inches="tight")
+    query_fig.savefig(args.png_basename + "_query.png", bbox_inches="tight")
 
 if __name__ == "__main__":
     main()
