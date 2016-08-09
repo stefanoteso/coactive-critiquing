@@ -134,13 +134,14 @@ array[FEATURES] of int: W;
 array[FEATURES] of var TRUTH_VALUES: phi;
 array[FEATURES] of var TRUTH_VALUES: INPUT_PHI;
 
-array[1..6] of var int: x;
-constraint x[1] = x_type;
-constraint x[2] = x_manufacturer;
-constraint x[3] = x_cpu;
-constraint x[4] = x_monitor;
-constraint x[5] = x_ram;
-constraint x[6] = x_hd;
+array[1..6] of var int: x = [
+    x_type,
+    x_manufacturer,
+    x_cpu,
+    x_monitor,
+    x_ram,
+    x_hd
+];
 array[1..6] of int: INPUT_X;
 
 {phis}
