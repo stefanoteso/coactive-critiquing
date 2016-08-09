@@ -19,6 +19,12 @@ set of int: LOCATIONS = 1..N_LOCATIONS;
 set of int: LOCATIONS1 = 1..N_LOCATIONS+1;
 int: NO_LOCATION = N_LOCATIONS+1;
 
+int: N_REGIONS;
+set of int: REGIONS = 1..N_REGIONS;
+set of int: REGIONS1 = 1..N_REGIONS+1;
+int: NO_REGION = N_REGIONS+1;
+array[LOCATIONS] of REGIONS: location_region;
+
 int: N_ACTIVITIES;
 set of int: ACTIVITIES = 1..N_ACTIVITIES;
 
@@ -30,6 +36,11 @@ array[LOCATIONS, LOCATIONS] of int: TRAVEL_TIME;
 array[1..T] of var LOCATIONS1: location;
 array[1..T] of var int: duration;
 array[1..T-1] of var int: travel;
+var int: travel_time = sum(travel);
+
+array[1..T] of var REGIONS1: regions = [if location[t] == NO_LOCATION then NO_REGION else location_region[location[t]] endif | t in 1..T];
+array[REGIONS1] of var 0..N_LOCATIONS: region_counts;
+constraint global_cardinality(regions, [i | i in REGIONS1], region_counts);
 
 % count number of distinct locations
 array[LOCATIONS] of var int: location_counts;
@@ -69,7 +80,7 @@ constraint forall(i in 1..T-1 where location[i] = NO_LOCATION)(
 
 % traveling from one location to another takes time
 constraint forall(i in 1..T-1 where location[i+1] != NO_LOCATION)(
-    travel[i] >= TRAVEL_TIME[location[i], location[i+1]]);
+    travel[i] = TRAVEL_TIME[location[i], location[i+1]]);
 
 % configuration
 array[1..3*T-1] of var int: x;
@@ -126,6 +137,9 @@ class TravelProblem(Problem):
         self._horizon = horizon
         num_attributes = 3 * horizon - 1
 
+        self.N_REGIONS = rng.randint(2, N_LOCATIONS)
+        self.regions = [rng.randint(1, self.N_REGIONS) for _ in range(N_LOCATIONS)]
+
         # Generate the dataset
         # XXX ideally these would be provided externally
         self._location_activities = np.vstack([
@@ -150,8 +164,11 @@ class TravelProblem(Problem):
 
             travel_time =
             {}
+            
+            location_region =
+            {}
         """).format(self._location_activities, self._location_cost,
-                    self._travel_time))
+                    self._travel_time, self.regions))
 
         # Generate the features
 
@@ -187,11 +204,17 @@ class TravelProblem(Problem):
 
         num_base_features = j - 1
 
+        #
+        for region in range(1, self.N_REGIONS + 1):
+            feature = "constraint phi[{j}] = 2 * (region_counts[{region}] + travel_time == T) - 1;".format(**locals())
+            self.features.append(feature)
+            j += 1
+            
         # TODO add user features:
         # - local: sequence features
         # - global: stay within a subsets of locations
 
-        num_features = num_base_features
+        num_features = j - 1
 
         global _TEMPLATE
         _TEMPLATE = \
@@ -224,6 +247,8 @@ class TravelProblem(Problem):
             "N_FEATURES": self.num_features,
             "ACTIVE_FEATURES": set([1]), # doesn't matter
             "T": self._horizon,
+            "N_REGIONS": self.N_REGIONS,
+            "location_region": self.regions,
             "N_LOCATIONS": N_LOCATIONS,
             "N_ACTIVITIES": N_ACTIVITIES,
             "LOCATION_ACTIVITIES": self._location_activities,
@@ -257,6 +282,8 @@ class TravelProblem(Problem):
             "N_FEATURES": self.num_features,
             "ACTIVE_FEATURES": {j + 1 for j in features}, # doesn't matter
             "T": self._horizon,
+            "N_REGIONS": self.N_REGIONS,
+            "location_region": self.regions,
             "N_LOCATIONS": N_LOCATIONS,
             "N_ACTIVITIES": N_ACTIVITIES,
             "LOCATION_ACTIVITIES": self._location_activities,
@@ -296,6 +323,8 @@ class TravelProblem(Problem):
             "N_FEATURES": self.num_features,
             "ACTIVE_FEATURES": {j + 1 for j in features}, # doesn't matter
             "T": self._horizon,
+            "N_REGIONS": self.N_REGIONS,
+            "location_region": self.regions,
             "N_LOCATIONS": N_LOCATIONS,
             "N_ACTIVITIES": N_ACTIVITIES,
             "LOCATION_ACTIVITIES": self._location_activities,
