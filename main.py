@@ -14,7 +14,9 @@ PROBLEMS = {
         lambda args, rng:
             stfb.PCProblem(noise=args.noise, sparsity=args.sparsity, rng=rng),
     "travel":
-        lambda arg, rng: stfb.TravelProblem(rng=rng),
+        lambda args, rng:
+            stfb.TravelProblem(noise=args.noise, sparsity=args.sparsity,
+                               rng=rng),
 }
 
 METHODS = {
