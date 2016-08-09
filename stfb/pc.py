@@ -159,7 +159,7 @@ solve maximize objective;
 
 _IMPROVE = """\
 var int: objective =
-    sum(i in ATTRIBUTES)(x[i] != INPUT_X[i]);
+    sum(i in 1..6)(x[i] != INPUT_X[i]);
 
 constraint
     sum(j in ACTIVE_FEATURES)(W[j] * phi[j]) >
@@ -308,6 +308,9 @@ class PCProblem(Problem):
         if self.noise:
             raise NotImplementedError()
             w_star += self.rng.normal(0, self.noise, size=w_star.shape).astype(np.float32)
+
+        targets = self.enumerate_features(features)
+        assert (w_star[targets] != 0).any()
 
         PATH = "pc-improve.mzn"
         with open(PATH, "wb") as fp:
