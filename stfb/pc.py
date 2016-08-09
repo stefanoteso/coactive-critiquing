@@ -7,35 +7,35 @@ from sklearn.utils import check_random_state
 
 from . import Problem
 
+_RAM_DESKTOPS = {2, 5, 8, 9};
+_RAM_TOWERS = {5, 8, 9, 10};
+
 _TEMPLATE = """\
-int: NUM_FEATURES;
-set of int: FEATURES = 1..NUM_FEATURES;
+int: N_TYPES = 3;
+set of int: TYPES = 1..N_TYPES;
 
-int: NUM_TYPES = 3;
-set of int: TYPES = 1..NUM_TYPES;
+int: N_MANUFACTURERS = 8;
+set of int: MANUFACTURERS = 1..N_MANUFACTURERS;
 
-int: NUM_MANUFACTURERS = 8;
-set of int: MANUFACTURERS = 1..NUM_MANUFACTURERS;
-
-int: NUM_CPUS = 37;
-set of int: CPUS = 1..NUM_CPUS;
+int: N_CPUS = 37;
+set of int: CPUS = 1..N_CPUS;
 set of int: CPU_AMDS = 1..4;
 int: CPU_CRUSOE = 5;
 set of int: CPU_CELERONS = 6..15;
 set of int: CPU_PENTIUMS = 16..27;
 set of int: CPU_POWERPCS = 28..37;
 
-int: NUM_MONITORS = 8;
-set of int: MONITORS = 1..NUM_MONITORS;
+int: N_MONITORS = 8;
+set of int: MONITORS = 1..N_MONITORS;
 
-int: NUM_RAM = 10;
-set of int: RAM = 1..NUM_RAM;
-set of int: RAM_LAPTOPS = {{1, 2, 3, 4, 5, 6, 7, 8, 9}};
-set of int: RAM_DESKTOPS = {{2, 5, 8, 9}};
-set of int: RAM_TOWERS = {{5, 8, 9, 10}};
+int: N_RAM = 10;
+set of int: RAM = 1..N_RAM;
+set of int: RAM_LAPTOPS = 1..9;
+set of int: RAM_DESKTOPS;
+set of int: RAM_TOWERS;
 
-int: NUM_HD = 10;
-set of int: HD = 1..NUM_HD;
+int: N_HD = 10;
+set of int: HD = 1..N_HD;
 
 array[TYPES] of float: COST_TYPE = [
     50, 0, 80
@@ -81,31 +81,6 @@ var float: x_cost = (1.0 / 2753.4) * (
     COST_RAM[x_ram] +
     COST_HD[x_hd]);
 
-array[1..6] of var int: x;
-constraint x[1] = x_type;
-constraint x[2] = x_manufacturer;
-constraint x[3] = x_cpu;
-constraint x[4] = x_monitor;
-constraint x[5] = x_ram;
-constraint x[6] = x_hd;
-
-bool: IS_IMPROVEMENT_QUERY;
-array[1..6] of int: INPUT_X;
-% NOTE we do not require the costs to coincide: cost is a dependent variable.
-% this also works around the difficulty of enforcing equality between floats
-% without running into unsats.
-constraint IS_IMPROVEMENT_QUERY ->
-    (sum(attr in 1..6)(bool2int(INPUT_X[attr] != x[attr])) <= 3);
-
-array[FEATURES] of float: W;
-array[FEATURES] of var float: phi;
-
-var float: objective = sum(feat in FEATURES)(W[feat] * phi[feat]);
-
-{phis}
-
-{solve}
-
 % Compaq -> Laptop or Desktop
 constraint (x_manufacturer = 2) -> (x_type = 1 \/ x_type = 2);
 
@@ -148,14 +123,57 @@ constraint (x_type = 2 \/ x_type = 3) -> (x_hd >= 5);
 % Type -> Monitor size
 constraint (x_type = 1) -> (x_monitor <= 6);
 constraint (x_type = 2 \/ x_type = 3) -> (x_monitor >= 7);
+
+int: N_FEATURES;
+set of int: FEATURES = 1..N_FEATURES;
+
+set of int: TRUTH_VALUES;
+set of int: ACTIVE_FEATURES;
+
+array[FEATURES] of int: W;
+array[FEATURES] of var TRUTH_VALUES: phi;
+array[FEATURES] of var TRUTH_VALUES: INPUT_PHI;
+
+array[1..6] of var int: x;
+constraint x[1] = x_type;
+constraint x[2] = x_manufacturer;
+constraint x[3] = x_cpu;
+constraint x[4] = x_monitor;
+constraint x[5] = x_ram;
+constraint x[6] = x_hd;
+array[1..6] of int: INPUT_X;
+
+{phis}
+
+{solve}
 """
 
-_SOLVE_PHI = "solve satisfy;"
-_SOLVE_INFER_IMPROVE = "solve maximize objective;"
+_PHI = "solve satisfy;"
+
+_INFER = """\
+var int: objective =
+    sum(j in ACTIVE_FEATURES)(W[j] * phi[j]);
+
+solve maximize objective;
+"""
+
+_IMPROVE = """\
+var int: objective =
+    sum(i in ATTRIBUTES)(x[i] != INPUT_X[i]);
+
+constraint
+    sum(j in ACTIVE_FEATURES)(W[j] * phi[j]) >
+        sum(j in ACTIVE_FEATURES)(W[j] * INPUT_PHI[j]);
+
+constraint objective >= 1;
+
+solve minimize objective;
+"""
 
 class PCProblem(Problem):
-    def __init__(self, rng=None):
+    def __init__(self, noise=0.1, sparsity=0.2, rng=None):
         rng = check_random_state(rng)
+        self.noise, self.rng = noise, rng
 
         BOOL_DOMAINS = [
             ("type",         list(range(1, 3+1))),
@@ -166,26 +184,18 @@ class PCProblem(Problem):
             ("hd",           list(range(1, 10+1))),
         ]
 
-        # NOTE the maximum-cost feasible configuration has cost 2753.4
-        COST_THRESHOLDS = np.arange(0, 2800, 100)
+        num_attributes = len(BOOL_DOMAINS)
 
-        self.features = []
-
-        # Attribute-level features
-        j = 1
+        self.features, j = [], 0
         for attr, domain in BOOL_DOMAINS:
             for value in domain:
-                features = "constraint phi[{j}] = bool2float(x_{attr} = {value});" \
-                               .format(**locals())
+                equality = "(x_{} = {})".format(attr, value)
+                features = "constraint phi[{}] = 2 * ({}) - 1;".format(j + 1, equality)
                 self.features.append(features)
                 j += 1
 
-        self.features.append("constraint phi[{j}] = x_cost;".format(**locals()))
-        j += 1
+        num_base_features = j
 
-        num_base_features = j - 1
-
-        # Horn-like features between boolean attr and bool subsets
         for head, body in product(BOOL_DOMAINS, repeat=2):
             head_attr, head_domain = head
             body_attr, body_domain = body
@@ -196,29 +206,30 @@ class PCProblem(Problem):
                 for head_value, body_subset in product(head_domain, body_subsets):
                     body = " \/ ".join(["x_{} = {}".format(body_attr, body_value)
                                         for body_value in body_subset])
-                    feature = "constraint phi[{j}] = bool2float(x_{head_attr} != {head_value} \/ ({body}));" \
-                                  .format(**locals())
+                    implication = "x_{head_attr} != {head_value} \/ ({body})".format(**locals())
+                    feature = "constraint phi[{}] = 2 * ({}) - 1;".format(j + 1, implication)
                     self.features.append(feature)
                     j += 1
 
-#        # Enumerate all Horn rules bool attr -> cost threshold
-#        for head, threshold in product(BOOL_DOMAINS, COST_THRESHOLDS):
-#            head_attr, head_domain = head
-#            for head_value, op in product(head_domain, ["<=", ">="]):
-#                feature = "constraint phi[{j}] = bool2float(x_{head_attr} != {head_value} \/ x_cost {op} {threshold});" \
-#                              .format(**locals())
-#                self.features.append(feature)
-#                j += 1
+        for threshold in np.arange(0, 2999, 250):
+            implication = "x_cost >= {} /\\ x_cost < {}".format(
+                threshold, threshold + 250)
+            feature = "constraint phi[{}] = 2 * ({}) - 1;".format(j + 1, implication)
+            self.features.append(feature)
+            j += 1
 
-        num_attributes = len(BOOL_DOMAINS) + 1
         num_features = len(self.features)
-        assert num_features == j - 1
+
+        global _TEMPLATE
+        _TEMPLATE = \
+            _TEMPLATE.format(phis="\n".join(self.features), solve="{solve}")
 
         # Sample the weight vector
-        num_nonzeros = max(1, int(np.rint(num_features * 0.1)))
-        nonzeros = rng.permutation(num_features)[:num_nonzeros]
-        w_star = np.zeros(num_features, dtype=np.float32)
-        w_star[nonzeros] = rng.normal(0, 1, size=num_nonzeros)
+        w_star = 2 * rng.randint(0, 2, size=num_features) - 1
+        if sparsity < 1.0:
+            nnz_features = max(1, int(np.ceil(sparsity * num_features)))
+            zeros = rng.permutation(num_features)[nnz_features:]
+            w_star[zeros] = 0
 
         super().__init__(num_attributes, num_base_features, num_features,
                          w_star)
@@ -227,86 +238,106 @@ class PCProblem(Problem):
         return 1.0
 
     def phi(self, x, features):
-        features = self.enumerate_features(features)
         assert x.shape == (self.num_attributes,)
 
-        phis = "\n".join([self.features[j] for j in features])
-        solve = _SOLVE_PHI;
-        problem = _TEMPLATE.format(**locals())
+        targets = self.enumerate_features(features)
 
         PATH = "pc-phi.mzn"
         with open(PATH, "wb") as fp:
-            fp.write(problem.encode("utf-8"))
-
-        # XXX due to rounding errors, the last component of x (the PC cost)
-        # ends up losing one tiny bit of precision; here we remove everything
-        # below the resolution of 0.2
-        x[-1] = float(int(x[-1] * 10)) / 10
+            fp.write(_TEMPLATE.format(solve=_PHI).encode())
 
         data = {
-            "NUM_FEATURES": len(features),
-            "W": [0] * len(features), # doesn't matter
+            "TRUTH_VALUES": {-1, 1},
+            "RAM_DESKTOPS": _RAM_DESKTOPS,
+            "RAM_TOWERS": _RAM_TOWERS,
+            "N_FEATURES": self.num_features,
+            "ACTIVE_FEATURES": set([1]), # doesn't matter
+            "W": [0] * self.num_features, # doesn't matter
             "x_type": int(x[0]),
             "x_manufacturer": int(x[1]),
             "x_cpu": int(x[2]),
             "x_monitor": int(x[3]),
             "x_ram": int(x[4]),
             "x_hd": int(x[5]),
-            "INPUT_X": [0, 0, 0, 0, 0, 0], # doesn't matter
-            "IS_IMPROVEMENT_QUERY": "false",
+            "INPUT_X": [1] * self.num_attributes, # doesn't matter
+            "INPUT_PHI": [1] * self.num_features, # doesn't matter
         }
-        assignments = minizinc(PATH, data=data, keep=True, parallel=4, output_vars=["phi", "objective"])
+        assignments = minizinc(PATH, data=data, output_vars=["phi"], keep=True)
 
-        return self.assignment_to_array(assignments[0]["phi"])
+        phi = self.assignment_to_array(assignments[0]["phi"])
+        mask = np.ones_like(phi, dtype=bool)
+        mask[targets] = False
+        phi[mask] = 0.0
+
+        return phi
 
     def infer(self, w, features):
-        features = self.enumerate_features(features)
-        assert w.shape == (len(features),)
+        assert w.shape == (self.num_features,)
 
-        if (w == 0).all():
-            raise RuntimeError("inference with w == 0 is undefined")
-
-        phis = "\n".join([self.features[j] for j in features])
-        solve = _SOLVE_INFER_IMPROVE;
-        problem = _TEMPLATE.format(**locals())
+        targets = self.enumerate_features(features)
+        if (w[targets] == 0).all():
+            print("Warning: all-zero w!")
 
         PATH = "pc-infer.mzn"
         with open(PATH, "wb") as fp:
-            fp.write(problem.encode("utf-8"))
+            fp.write(_TEMPLATE.format(solve=_INFER).encode())
 
         data = {
-            "NUM_FEATURES": len(features),
-            "W": self.array_to_assignment(w, float),
-            "INPUT_X": [0, 0, 0, 0, 0, 0], # doesn't matter
-            "IS_IMPROVEMENT_QUERY": "false",
+            "TRUTH_VALUES": {-1, 1},
+            "RAM_DESKTOPS": _RAM_DESKTOPS,
+            "RAM_TOWERS": _RAM_TOWERS,
+            "N_FEATURES": self.num_features,
+            "ACTIVE_FEATURES": {j + 1 for j in targets},
+            "W": self.array_to_assignment(w, int),
+            "INPUT_X": [1] * self.num_attributes, # doesn't matter
+            "INPUT_PHI": [1] * self.num_features, # doesn't matter
         }
-        assignments = minizinc(PATH, data=data, keep=True, parallel=4, output_vars=["x", "objective"])
+        assignments = minizinc(PATH, data=data, output_vars=["x", "objective"],
+                               keep=True, parallel=0)
 
         return self.assignment_to_array(assignments[0]["x"])
 
     def query_improvement(self, x, features):
-        features = self.enumerate_features(features)
         assert x.shape == (self.num_attributes,)
 
-        w_star = self.w_star[features]
-        if (w_star == 0).all():
-            raise RuntimeError("inference with w == 0 is undefined")
+        if self.utility_loss(x, "all") == 0:
+            # XXX this is noiseless
+            return x
 
-        phis = "\n".join([self.features[j] for j in features])
-        solve = _SOLVE_INFER_IMPROVE;
-        problem = _TEMPLATE.format(**locals())
+        w_star = np.array(self.w_star)
+        if self.noise:
+            raise NotImplementedError()
+            w_star += self.rng.normal(0, self.noise, size=w_star.shape).astype(np.float32)
 
         PATH = "pc-improve.mzn"
         with open(PATH, "wb") as fp:
-            fp.write(problem.encode("utf-8"))
+            fp.write(_TEMPLATE.format(solve=_IMPROVE).encode("utf-8"))
+
+        phi = self.phi(x, "all") # XXX the sum is on ACTIVE_FEATURES anyway
 
         data = {
-            "NUM_FEATURES": len(features),
-            "W": self.array_to_assignment(w_star, float),
-            "INPUT_X": self.array_to_assignment(x[:6], int),
-            "IS_IMPROVEMENT_QUERY": "true",
+            "TRUTH_VALUES": {-1, 1},
+            "RAM_DESKTOPS": _RAM_DESKTOPS,
+            "RAM_TOWERS": _RAM_TOWERS,
+            "N_FEATURES": self.num_features,
+            "ACTIVE_FEATURES": {j + 1 for j in targets},
+            "W": self.array_to_assignment(w_star, int),
+            "INPUT_X": self.array_to_assignment(x, int),
+            "INPUT_PHI": self.array_to_assignment(phi, int),
         }
-        assignments = minizinc(PATH, data=data, keep=True, parallel=4, output_vars=["x", "objective"])
+        assignments = minizinc(PATH, data=data, output_vars=["x", "objective"],
+                               keep=True, parallel=0)
 
         x_bar = self.assignment_to_array(assignments[0]["x"])
+        assert (x != x_bar).any(), (x, x_bar)
+
+        phi_bar = self.phi(x_bar, "all")
+        assert (phi != phi_bar).any()
+
+        utility = np.dot(w_star, self.phi(x, targets))
+        utility_bar = np.dot(w_star, self.phi(x_bar, targets))
+        assert utility_bar > utility, \
+            "u^k({}) = {} is not larger than u^k({}) = {}".format(
+                x_bar, utility_bar, x, utility)
+
         return x_bar
