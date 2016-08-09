@@ -9,6 +9,8 @@ from textwrap import dedent
 from . import Problem
 
 _TEMPLATE = """\
+include "globals.mzn";
+
 % constants
 int: T;
 
@@ -28,6 +30,15 @@ array[LOCATIONS, LOCATIONS] of int: TRAVEL_TIME;
 array[1..T] of var LOCATIONS1: location;
 array[1..T] of var int: duration;
 array[1..T-1] of var int: travel;
+
+% count number of distinct locations
+array[LOCATIONS] of var int: location_counts;
+var int: n_different_locations =
+    among(location_counts, 1..N_LOCATIONS);
+
+constraint
+    global_cardinality(location, [i | i in LOCATIONS],
+                       location_counts);
 
 % bounds on duration
 constraint forall(i in 1..T)(duration[i] >= 0);
@@ -126,7 +137,7 @@ class TravelProblem(Problem):
             [0]
         ])
         temp = rng.randint(1, 5, size=(N_LOCATIONS, N_LOCATIONS))
-        self._travel_time = temp + temp.T
+        self._travel_time = (temp + temp.T) // 2
 
         print(dedent("""\
             TRAVEL DATASET:
@@ -158,6 +169,11 @@ class TravelProblem(Problem):
             feature = "constraint phi[{j}] = sum(i in 1..T)(LOCATION_ACTIVITIES[location[i], {activity}]);".format(**locals())
             self.features.append(feature)
             j += 1
+
+        # Number of distinct locations
+        feature = "constraint phi[{j}] = n_different_locations;".format(**locals())
+        self.features.append(feature)
+        j += 1
 
         # Total time spent traveling
         feature = "constraint phi[{j}] = sum(i in 1..T-1)(travel[i]);".format(**locals())
