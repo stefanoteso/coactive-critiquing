@@ -125,7 +125,6 @@ class CanvasProblem(Problem):
         assert w.shape == (self.num_features,)
 
         targets = self.enumerate_features(features)
-        targets = self.enumerate_features(features)
         if (w[targets] == 0).all():
             print("Warning: all-zero w!")
 
