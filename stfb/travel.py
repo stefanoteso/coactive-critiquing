@@ -73,9 +73,9 @@ set of int: FEATURES = 1..N_FEATURES;
 
 set of int: ACTIVE_FEATURES;
 
-array[FEATURES] of float: W;
-array[FEATURES] of var float: phi;
-float: INPUT_UTILITY;
+array[FEATURES] of int: W;
+array[FEATURES] of var int: phi;
+array[FEATURES] of int: INPUT_PHI;
 
 {phis}
 
@@ -85,7 +85,7 @@ float: INPUT_UTILITY;
 _PHI = "solve satisfy;"
 
 _INFER = """\
-var float: objective =
+var int: objective =
     sum(feat in ACTIVE_FEATURES)(W[feat] * phi[feat]);
 
 solve maximize objective;
@@ -95,7 +95,9 @@ _IMPROVE = """\
 var int: objective =
     sum(t in 1..3*T-1)(x[t] != INPUT_X[t]);
 
-constraint sum(feat in ACTIVE_FEATURES)(W[feat] * phi[feat]) > INPUT_UTILITY;
+constraint
+    sum(feat in ACTIVE_FEATURES)(W[feat] * phi[feat]) >
+        sum(feat in ACTIVE_FEATURES)(W[feat] * INPUT_PHI[feat]);
 
 constraint objective >= 1;
 
@@ -106,7 +108,7 @@ N_LOCATIONS = 10
 N_ACTIVITIES = 10
 
 class TravelProblem(Problem):
-    def __init__(self, horizon=10, noise=0.1, rng=None):
+    def __init__(self, horizon=10, noise=0.1, sparsity=0.2, rng=None):
         rng = check_random_state(rng)
         self.noise, self.rng = noise, rng
 
@@ -147,7 +149,7 @@ class TravelProblem(Problem):
 
         # Number of time slots spent in a location
         for location in range(1, N_LOCATIONS + 1):
-            feature = "constraint phi[{j}] = sum(i in 1..T)(bool2int(location[i] = {location}));".format(**locals())
+            feature = "constraint phi[{j}] = sum(i in 1..T)(location[i] = {location});".format(**locals())
             self.features.append(feature)
             j += 1
 
@@ -167,11 +169,12 @@ class TravelProblem(Problem):
         self.features.append(feature)
         j += 1
 
+        num_base_features = j - 1
+
         # TODO add user features:
         # - local: sequence features
         # - global: stay within a subsets of locations
 
-        num_base_features = j - 1
         num_features = num_base_features
 
         global _TEMPLATE
@@ -179,7 +182,11 @@ class TravelProblem(Problem):
             _TEMPLATE.format(phis="\n".join(self.features), solve="{solve}")
 
         # Sample the weight vector
-        w_star = rng.normal(0, 1, size=num_features).astype(np.float32)
+        w_star = 2 * rng.randint(0, 2, size=num_features) - 1
+        if sparsity < 1.0:
+            nnz_features = max(1, int(np.ceil(sparsity * num_features)))
+            zeros = rng.permutation(num_features)[nnz_features:]
+            w_star[zeros] = 0
 
         super().__init__(num_attributes, num_base_features, num_features,
                          w_star)
@@ -209,7 +216,7 @@ class TravelProblem(Problem):
             "W": [0] * self.num_features, # doesn't matter
             "x": self.array_to_assignment(x, int),
             "INPUT_X": [0] * self.num_attributes, # doesn't matter
-            "INPUT_UTILITY": 0.0, # doesn't matter
+            "INPUT_PHI": [0] * self.num_features, # doesn't matter
         }
         assignments = minizinc(PATH, data=data)
 
@@ -218,7 +225,7 @@ class TravelProblem(Problem):
         mask[targets] = False
         phi[mask] = 0.0
 
-        return phi
+        return phi.astype(np.int32)
 
     def infer(self, w, features):
         assert w.shape == (self.num_features,)
@@ -239,9 +246,9 @@ class TravelProblem(Problem):
             "LOCATION_ACTIVITIES": self._location_activities,
             "LOCATION_COST": self._location_cost,
             "TRAVEL_TIME": self._travel_time,
-            "W": self.array_to_assignment(w, float),
+            "W": self.array_to_assignment(w, int),
             "INPUT_X": [0] * self.num_attributes, # doesn't matter
-            "INPUT_UTILITY": 0.0, # doesn't matter
+            "INPUT_PHI": [0] * self.num_features, # doesn't matter
         }
         assignments = minizinc(PATH, data=data)
 
@@ -256,6 +263,7 @@ class TravelProblem(Problem):
 
         w_star = np.array(self.w_star)
         if self.noise:
+            raise NotImplementedError()
             w_star += self.rng.normal(0, self.noise, size=w_star.shape).astype(np.float32)
 
         features = self.enumerate_features(features)
@@ -267,6 +275,7 @@ class TravelProblem(Problem):
         with open(PATH, "wb") as fp:
             fp.write(_TEMPLATE.format(solve=_IMPROVE).encode("utf-8"))
 
+        phi = self.phi(x, "all") # XXX the sum is on ACTIVE_FEATURES anyway
         data = {
             "N_FEATURES": self.num_features,
             "ACTIVE_FEATURES": {j + 1 for j in features}, # doesn't matter
@@ -276,9 +285,9 @@ class TravelProblem(Problem):
             "LOCATION_ACTIVITIES": self._location_activities,
             "LOCATION_COST": self._location_cost,
             "TRAVEL_TIME": self._travel_time,
-            "W": self.array_to_assignment(w_star, float),
+            "W": self.array_to_assignment(w_star, int),
             "INPUT_X": self.array_to_assignment(x, int),
-            "INPUT_UTILITY": utility,
+            "INPUT_PHI": self.array_to_assignment(phi, int),
         }
         assignments = minizinc(PATH, data=data)
 
