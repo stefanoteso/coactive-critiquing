@@ -6,20 +6,13 @@ import pymzn
 import stfb
 
 PROBLEMS = {
-    "rand":
-        lambda args, rng:
-            stfb.RandProblem(args.num_attributes, noise=args.noise,
-                             sparsity=args.sparsity, rng=rng),
-    "contrand":
-        lambda args, rng:
-            stfb.ContRandProblem(args.num_attributes, noise=args.noise,
-                                 sparsity=args.sparsity, rng=rng),
     "canvas":
         lambda args, rng:
             stfb.CanvasProblem(noise=args.noise, sparsity=args.sparsity,
                                rng=rng),
     "pc":
-        lambda args, rng: stfb.PCProblem(rng=rng),
+        lambda args, rng:
+            stfb.PCProblem(noise=args.noise, sparsity=args.sparsity, rng=rng),
     "travel":
         lambda arg, rng: stfb.TravelProblem(rng=rng),
 }
