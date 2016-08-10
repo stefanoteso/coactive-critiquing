@@ -82,12 +82,12 @@ def pp(problem, max_iters, targets="attributes", can_critique=False):
         is_satisfied = (x == x_bar).all()
 
         delta = problem.phi(x_bar, targets) - problem.phi(x, targets)
+        t1 = time() - t1
 
         rho, sign = None, None
         if can_critique and not is_satisfied and (delta == 0).all():
             rho, sign = problem.query_critique(x, x_bar, targets)
             assert rho > 0
-        t1 = time() - t1
 
         phi = problem.phi(x, "all")
         phi_bar = problem.phi(x_bar, "all")
@@ -117,7 +117,7 @@ def pp(problem, max_iters, targets="attributes", can_critique=False):
             else:
                 w[rho] = sign * problem.get_feature_radius()
                 targets.append(rho)
-            t2 = time() - t2
+        t2 = time() - t2
 
         num_targets = len(targets)
 
