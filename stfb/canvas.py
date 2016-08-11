@@ -51,8 +51,6 @@ constraint objective >= 1;
 solve minimize objective;
 """
 
-_rects = None
-
 class CanvasProblem(Problem):
     def __init__(self, num_features=100, noise=0.1, sparsity=0.2, rng=None):
         rng = check_random_state(rng)
