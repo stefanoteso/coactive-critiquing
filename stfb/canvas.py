@@ -1,6 +1,7 @@
 # -*- encoding: utf-8 -*-
 
 import numpy as np
+import pickle
 from pymzn import minizinc
 from itertools import product, combinations
 from sklearn.utils import check_random_state
@@ -20,8 +21,8 @@ set of int: TRUTH_VALUES;
 array[FEATURES] of int: W;
 array[FEATURES] of var TRUTH_VALUES: phi;
 array[FEATURES] of var TRUTH_VALUES: INPUT_PHI;
-array[ATTRIBUTES] of var 1..100: x;
-array[ATTRIBUTES] of 1..100: INPUT_X;
+array[ATTRIBUTES] of var 1..{canvas_size}: x;
+array[ATTRIBUTES] of 1..{canvas_size}: INPUT_X;
 
 {phis}
 
@@ -57,23 +58,13 @@ class CanvasProblem(Problem):
         rng = check_random_state(rng)
         self.noise, self.rng = noise, rng
 
-        # XXX this should be done offline
-        global _rects
-
-        if _rects is None:
-
-            reorder = lambda a, b: (min(a, b), max(a, b))
-
-            _rects = []
-            for j in range(num_features):
-                xmin, xmax = reorder(*rng.randint(1, 100+1, size=2))
-                ymin, ymax = reorder(*rng.randint(1, 100+1, size=2))
-                _rects.append([xmin, xmax, ymin, ymax])
-
-            print("rects =\n{}".format("\n".join(map(str, _rects))))
+        with open("datasets/canvas.pickle", "rb") as fp:
+            dataset = pickle.load(fp)
+            canvas_size = dataset["canvas_size"]
+            rectangles = dataset["rectangles"]
 
         self.features = []
-        for j, (xmin, xmax, ymin, ymax) in enumerate(_rects):
+        for j, (xmin, xmax, ymin, ymax) in enumerate(rectangles):
             is_inside = "x[1] >= {xmin} /\\ x[1] <= {xmax} /\\ x[2] >= {ymin} /\\ x[2] <= {ymax}".format(**locals())
             feature = "constraint phi[{}] = 2 * ({}) - 1;".format(j + 1, is_inside)
             self.features.append(feature)
@@ -81,7 +72,8 @@ class CanvasProblem(Problem):
 
         global _TEMPLATE
         _TEMPLATE = \
-            _TEMPLATE.format(phis="\n".join(self.features), solve="{solve}")
+            _TEMPLATE.format(canvas_size=canvas_size,
+                             phis="\n".join(self.features), solve="{solve}")
 
         w_star = 2 * rng.randint(0, 2, size=num_features) - 1
         if sparsity < 1.0:
