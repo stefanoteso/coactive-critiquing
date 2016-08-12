@@ -3,6 +3,7 @@
 import numpy as np
 from textwrap import dedent
 from time import time
+from scipy.spatial import Delaunay
 
 # NOTE the user must be able to answer "no change", or alpha-informativity
 # breaks and convergence can not occur.
@@ -69,6 +70,8 @@ def pp(problem, max_iters, targets="attributes", can_critique=False):
         """).format(problem.w_star, problem.x_star,
                     problem.phi(problem.x_star, "all")))
 
+    dataset = []
+    triangulation = None
     trace = []
     for it in range(max_iters):
         t0 = time()
@@ -80,14 +83,24 @@ def pp(problem, max_iters, targets="attributes", can_critique=False):
 
         t1 = time()
         is_satisfied = (x == x_bar).all()
-
         delta = problem.phi(x_bar, targets) - problem.phi(x, targets)
         t1 = time() - t1
 
         rho, sign = None, None
-        if can_critique and not is_satisfied and (delta == 0).all():
+        if not triangulation:
+            triangulation = Delaunay(np.array([delta]), incremental=True)
+        elif can_critique and triangulation.find_simplex(-delta) >= 0:
+            # The union of all the simplices of the Delaunay triangulation
+            # determines the convex hull of the dataset.
+            # If -delta (point of the "negative class") is in the convex hull
+            # (determined by finding if a simplex in the Delaunay
+            # triangulation contains the point) then the the dataset is
+            # not linearly separable w.r.t. the current phi.
             rho, sign = problem.query_critique(x, x_bar, targets)
             assert rho > 0
+
+        dataset.append((x_bar, x))
+        triangulation.add_points(np.array([delta]))
 
         phi = problem.phi(x, "all")
         phi_bar = problem.phi(x_bar, "all")
@@ -117,6 +130,15 @@ def pp(problem, max_iters, targets="attributes", can_critique=False):
             else:
                 w[rho] = sign * problem.get_feature_radius()
                 targets.append(rho)
+
+                # Recompute the triangulation w.r.t. the new phi
+                deltas = []
+                for x_bar_1, x_1 in dataset:
+                    delta_1 = (problem.phi(x_bar_1, targets) -
+                               problem.phi(x_1, targets))
+                    deltas.append(delta_1)
+                triangulation = Delaunay(np.array(deltas), incremental=True)
+
         t2 = time() - t2
 
         num_targets = len(targets)
