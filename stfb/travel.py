@@ -1,6 +1,7 @@
 # -*- encoding: utf-8 -*-
 
 import numpy as np
+import pickle
 from pymzn import minizinc
 from itertools import product, combinations
 from sklearn.utils import check_random_state
@@ -126,9 +127,6 @@ constraint objective >= 1;
 solve minimize objective;
 """
 
-N_LOCATIONS = 10
-N_ACTIVITIES = 10
-
 class TravelProblem(Problem):
     def __init__(self, horizon=10, noise=0.1, sparsity=0.2, rng=None):
         rng = check_random_state(rng)
@@ -137,38 +135,16 @@ class TravelProblem(Problem):
         self._horizon = horizon
         num_attributes = 3 * horizon - 1
 
-        self.N_REGIONS = rng.randint(2, N_LOCATIONS)
-        self.regions = [rng.randint(1, self.N_REGIONS) for _ in range(N_LOCATIONS)]
+        with open("datasets/travel.pickle", "rb") as fp:
+            dataset = pickle.load(fp)
 
-        # Generate the dataset
-        # XXX ideally these would be provided externally
-        self._location_activities = np.vstack([
-            rng.randint(0, 2, size=(N_LOCATIONS, N_ACTIVITIES)),
-            np.zeros((1, N_ACTIVITIES))
-        ]).astype(int)
-        self._location_cost = np.hstack([
-            rng.randint(1, 10, size=N_LOCATIONS),
-            [0]
-        ])
-        temp = rng.randint(1, 5, size=(N_LOCATIONS, N_LOCATIONS))
-        self._travel_time = (temp + temp.T) // 2
-
-        print(dedent("""\
-            TRAVEL DATASET:
-
-            location_activities =
-            {}
-
-            location_cost =
-            {}
-
-            travel_time =
-            {}
-            
-            location_region =
-            {}
-        """).format(self._location_activities, self._location_cost,
-                    self._travel_time, self.regions))
+        self._location_activities = dataset["location_activities"]
+        self._num_locations = dataset["location_activities"].shape[0] - 1
+        self._num_activities = dataset["location_activities"].shape[1]
+        self._location_cost = dataset["location_cost"]
+        self._travel_time = dataset["travel_time"]
+        self.regions = dataset["regions"]
+        self.N_REGIONS = dataset["num_regions"]
 
         # Generate the features
 
@@ -176,13 +152,13 @@ class TravelProblem(Problem):
         self.features = []
 
         # Number of time slots spent in a location
-        for location in range(1, N_LOCATIONS + 1):
+        for location in range(1, self._num_locations + 1):
             feature = "constraint phi[{j}] = sum(i in 1..T)(location[i] = {location});".format(**locals())
             self.features.append(feature)
             j += 1
 
         # Number of time slots with access to an activity
-        for activity in range(1, N_ACTIVITIES + 1):
+        for activity in range(1, self._num_activities + 1):
             feature = "constraint phi[{j}] = sum(i in 1..T)(LOCATION_ACTIVITIES[location[i], {activity}]);".format(**locals())
             self.features.append(feature)
             j += 1
@@ -211,7 +187,7 @@ class TravelProblem(Problem):
             j += 1
         
         # imply locations
-        for location1, location2 in combinations(range(1, N_LOCATIONS + 1), 2):
+        for location1, location2 in combinations(range(1, self._num_locations + 1), 2):
             feature = "constraint phi[{j}] = 2 * (location_counts[{location1}] = 0 \/ location_counts[{location2}] > 0) - 1;".format(**locals())
             feature = "constraint phi[{j}] = 2 * (location_counts[{location2}] = 0 \/ location_counts[{location1}] > 0) - 1;".format(**locals())
             self.features.append(feature)
@@ -239,7 +215,7 @@ class TravelProblem(Problem):
 
     def get_feature_radius(self):
         # XXX incorrect
-        return float(max(N_LOCATIONS, N_ACTIVITIES))
+        return float(max(self._num_locations, self._num_activities))
 
     def phi(self, x, features):
         assert x.shape == (self.num_attributes,)
@@ -256,8 +232,8 @@ class TravelProblem(Problem):
             "T": self._horizon,
             "N_REGIONS": self.N_REGIONS,
             "location_region": self.regions,
-            "N_LOCATIONS": N_LOCATIONS,
-            "N_ACTIVITIES": N_ACTIVITIES,
+            "N_LOCATIONS": self._num_locations,
+            "N_ACTIVITIES": self._num_activities,
             "LOCATION_ACTIVITIES": self._location_activities,
             "LOCATION_COST": self._location_cost,
             "TRAVEL_TIME": self._travel_time,
@@ -291,8 +267,8 @@ class TravelProblem(Problem):
             "T": self._horizon,
             "N_REGIONS": self.N_REGIONS,
             "location_region": self.regions,
-            "N_LOCATIONS": N_LOCATIONS,
-            "N_ACTIVITIES": N_ACTIVITIES,
+            "N_LOCATIONS": self._num_locations,
+            "N_ACTIVITIES": self._num_activities,
             "LOCATION_ACTIVITIES": self._location_activities,
             "LOCATION_COST": self._location_cost,
             "TRAVEL_TIME": self._travel_time,
@@ -332,8 +308,8 @@ class TravelProblem(Problem):
             "T": self._horizon,
             "N_REGIONS": self.N_REGIONS,
             "location_region": self.regions,
-            "N_LOCATIONS": N_LOCATIONS,
-            "N_ACTIVITIES": N_ACTIVITIES,
+            "N_LOCATIONS": self._num_locations,
+            "N_ACTIVITIES": self._num_activities,
             "LOCATION_ACTIVITIES": self._location_activities,
             "LOCATION_COST": self._location_cost,
             "TRAVEL_TIME": self._travel_time,
