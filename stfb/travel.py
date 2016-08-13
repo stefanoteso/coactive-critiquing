@@ -24,7 +24,7 @@ int: N_REGIONS;
 set of int: REGIONS = 1..N_REGIONS;
 set of int: REGIONS1 = 1..N_REGIONS+1;
 int: NO_REGION = N_REGIONS+1;
-array[LOCATIONS] of REGIONS: location_region;
+array[LOCATIONS] of REGIONS: LOCATION_REGION;
 
 int: N_ACTIVITIES;
 set of int: ACTIVITIES = 1..N_ACTIVITIES;
@@ -39,7 +39,7 @@ array[1..T] of var int: duration;
 array[1..T-1] of var int: travel;
 var int: travel_time = sum(travel);
 
-array[1..T] of var REGIONS1: regions = [if location[t] == NO_LOCATION then NO_REGION else location_region[location[t]] endif | t in 1..T];
+array[1..T] of var REGIONS1: regions = [if location[t] == NO_LOCATION then NO_REGION else LOCATION_REGION[location[t]] endif | t in 1..T];
 array[REGIONS1] of var 0..N_LOCATIONS: region_counts;
 constraint global_cardinality(regions, [i | i in REGIONS1], region_counts);
 
@@ -143,8 +143,8 @@ class TravelProblem(Problem):
         self._num_activities = dataset["location_activities"].shape[1]
         self._location_cost = dataset["location_cost"]
         self._travel_time = dataset["travel_time"]
-        self.regions = dataset["regions"]
-        self.N_REGIONS = dataset["num_regions"]
+        self._regions = dataset["regions"]
+        self._num_regions = dataset["num_regions"]
 
         # Generate the features
 
@@ -181,18 +181,18 @@ class TravelProblem(Problem):
         num_base_features = j - 1
 
         # Regions
-        for region in range(1, self.N_REGIONS + 1):
+        for region in range(1, self._num_regions + 1):
             feature = "constraint phi[{j}] = 2 * (region_counts[{region}] + travel_time == T) - 1;".format(**locals())
             self.features.append(feature)
             j += 1
-        
+
         # imply locations
         for location1, location2 in combinations(range(1, self._num_locations + 1), 2):
             feature = "constraint phi[{j}] = 2 * (location_counts[{location1}] = 0 \/ location_counts[{location2}] > 0) - 1;".format(**locals())
             feature = "constraint phi[{j}] = 2 * (location_counts[{location2}] = 0 \/ location_counts[{location1}] > 0) - 1;".format(**locals())
             self.features.append(feature)
             j += 1
-            
+
         # TODO add user features:
         # - local: sequence features
         # - global: stay within a subsets of locations
@@ -230,8 +230,8 @@ class TravelProblem(Problem):
             "N_FEATURES": self.num_features,
             "ACTIVE_FEATURES": set([1]), # doesn't matter
             "T": self._horizon,
-            "N_REGIONS": self.N_REGIONS,
-            "location_region": self.regions,
+            "N_REGIONS": self._num_regions,
+            "LOCATION_REGION": self._regions,
             "N_LOCATIONS": self._num_locations,
             "N_ACTIVITIES": self._num_activities,
             "LOCATION_ACTIVITIES": self._location_activities,
@@ -265,8 +265,8 @@ class TravelProblem(Problem):
             "N_FEATURES": self.num_features,
             "ACTIVE_FEATURES": {j + 1 for j in features}, # doesn't matter
             "T": self._horizon,
-            "N_REGIONS": self.N_REGIONS,
-            "location_region": self.regions,
+            "N_REGIONS": self._num_regions,
+            "LOCATION_REGION": self._regions,
             "N_LOCATIONS": self._num_locations,
             "N_ACTIVITIES": self._num_activities,
             "LOCATION_ACTIVITIES": self._location_activities,
@@ -306,8 +306,8 @@ class TravelProblem(Problem):
             "N_FEATURES": self.num_features,
             "ACTIVE_FEATURES": {j + 1 for j in features}, # doesn't matter
             "T": self._horizon,
-            "N_REGIONS": self.N_REGIONS,
-            "location_region": self.regions,
+            "N_REGIONS": self._num_regions,
+            "LOCATION_REGION": self._regions,
             "N_LOCATIONS": self._num_locations,
             "N_ACTIVITIES": self._num_activities,
             "LOCATION_ACTIVITIES": self._location_activities,
