@@ -119,12 +119,21 @@ def pp(problem, max_iters, targets="attributes", can_critique=False):
 
             w =
             {w}
+            loss = {loss}
 
             x =
             {x}
             phi(x) =
             {phi}
-            loss = {loss}
+
+            x_bar =
+            {x_bar}
+            phi(x_bar) =
+            {phi_bar}
+
+            phi(x_bar) - phi(x) =
+            {delta}
+            is_separable = {is_separable}
 
             rho = {rho}
             sign = {sign}
@@ -154,14 +163,6 @@ def pp(problem, max_iters, targets="attributes", can_critique=False):
         num_targets = len(targets)
 
         print(dedent("""\
-            x_bar =
-            {x_bar}
-            phi(x_bar) =
-            {phi_bar}
-
-            phi(x_bar) - phi(x) =
-            {delta}
-
             new w =
             {w}
 
