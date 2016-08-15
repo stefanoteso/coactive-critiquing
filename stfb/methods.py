@@ -1,9 +1,9 @@
 # -*- encoding: utf-8 -*-
 
 import numpy as np
+import cvxpy as cvx
 from textwrap import dedent
 from time import time
-from scipy.spatial import Delaunay
 
 # NOTE the user must be able to answer "no change", or alpha-informativity
 # breaks and convergence can not occur.
@@ -15,6 +15,24 @@ from scipy.spatial import Delaunay
 # condition is looser than strictly required
 
 # TODO the 'perturbed' pp algorithm is preferred for noisy users.
+
+def _is_separable(deltas, verbose=False):
+    """Checks whether a dataset is separable using hard SVM."""
+    n_examples = len(deltas)
+    if n_examples < 1:
+        return True
+    n_features = len(deltas[0])
+
+    w = cvx.Variable(n_features)
+    b = cvx.Variable()
+
+    norm_w = cvx.norm(w, 2)
+    constraints = [cvx.sum_entries(deltas[i] * w + b) >= 1
+                   for i in range(n_examples)]
+
+    problem = cvx.Problem(cvx.Minimize(norm_w), constraints)
+    problem.solve(verbose=verbose)
+    return w.value is not None
 
 def pp(problem, max_iters, targets="attributes", can_critique=False):
     """The (Critiquing) Preference Perceptron [1]_.
@@ -70,9 +88,7 @@ def pp(problem, max_iters, targets="attributes", can_critique=False):
         """).format(problem.w_star, problem.x_star,
                     problem.phi(problem.x_star, "all")))
 
-    dataset = []
-    triangulation = None
-    trace = []
+    trace, dataset, deltas = [], [], []
     for it in range(max_iters):
         t0 = time()
         x = problem.infer(w, targets)
@@ -83,24 +99,18 @@ def pp(problem, max_iters, targets="attributes", can_critique=False):
 
         t1 = time()
         is_satisfied = (x == x_bar).all()
+        dataset.append((x_bar, x))
+
         delta = problem.phi(x_bar, targets) - problem.phi(x, targets)
+        deltas.append(delta)
+
+        is_separable = _is_separable(deltas)
         t1 = time() - t1
 
         rho, sign = None, None
-        if not triangulation:
-            triangulation = Delaunay(np.array([delta]), incremental=True)
-        elif can_critique and triangulation.find_simplex(-delta) >= 0:
-            # The union of all the simplices of the Delaunay triangulation
-            # determines the convex hull of the dataset.
-            # If -delta (point of the "negative class") is in the convex hull
-            # (determined by finding if a simplex in the Delaunay
-            # triangulation contains the point) then the the dataset is
-            # not linearly separable w.r.t. the current phi.
+        if can_critique and not is_separable:
             rho, sign = problem.query_critique(x, x_bar, targets)
             assert rho > 0
-
-        dataset.append((x_bar, x))
-        triangulation.add_points(np.array([delta]))
 
         phi = problem.phi(x, "all")
         phi_bar = problem.phi(x_bar, "all")
@@ -132,12 +142,12 @@ def pp(problem, max_iters, targets="attributes", can_critique=False):
                 targets.append(rho)
 
                 # Recompute the triangulation w.r.t. the new phi
-                deltas = []
+                new_deltas = []
                 for x_bar_1, x_1 in dataset:
                     delta_1 = (problem.phi(x_bar_1, targets) -
                                problem.phi(x_1, targets))
-                    deltas.append(delta_1)
-                triangulation = Delaunay(np.array(deltas), incremental=True)
+                    new_deltas.append(delta_1)
+                deltas = new_deltas
 
         t2 = time() - t2
 
