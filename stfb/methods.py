@@ -24,10 +24,9 @@ def _is_separable(deltas, verbose=False):
     n_features = len(deltas[0])
 
     w = cvx.Variable(n_features)
-    b = cvx.Variable()
 
     norm_w = cvx.norm(w, 2)
-    constraints = [cvx.sum_entries(deltas[i] * w + b) >= 1
+    constraints = [cvx.sum_entries(deltas[i] * w) >= 1
                    for i in range(n_examples)]
 
     problem = cvx.Problem(cvx.Minimize(norm_w), constraints)
