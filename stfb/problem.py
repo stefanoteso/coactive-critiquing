@@ -171,9 +171,9 @@ class Problem(object):
         targets = self.enumerate_features(features)
         assert len(targets) < self.num_features, "requested critique in full feature space"
 
-        scores = self.w_star * self.phi(x, "all")
+        scores = self.w_star * np.abs(self.phi(x_bar, "all") - self.phi(x, "all"))
         scores[targets] = np.nan
-        rho = np.nanargmin(scores)
+        rho = np.nanargmax(scores)
 
         #return rho, -np.sign(scores[rho])
         return rho, np.sign(self.w_star[rho])
