@@ -242,7 +242,7 @@ class TravelProblem(Problem):
             "INPUT_X": [0] * self.num_attributes, # doesn't matter
             "INPUT_PHI": [0] * self.num_features, # doesn't matter
         }
-        assignments = minizinc(PATH, data=data)
+        assignments = minizinc(PATH, data=data, output_vars=["phi"], keep=True)
 
         phi = self.assignment_to_array(assignments[0]["phi"])
         mask = np.ones_like(phi, dtype=bool)
@@ -276,7 +276,8 @@ class TravelProblem(Problem):
             "INPUT_X": [0] * self.num_attributes, # doesn't matter
             "INPUT_PHI": [0] * self.num_features, # doesn't matter
         }
-        assignments = minizinc(PATH, data=data)
+        assignments = minizinc(PATH, data=data, output_vars=["x", "objective"],
+                               keep=True, parallel=0)
 
         return self.assignment_to_array(assignments[0]["x"])
 
@@ -317,6 +318,7 @@ class TravelProblem(Problem):
             "INPUT_X": self.array_to_assignment(x, int),
             "INPUT_PHI": self.array_to_assignment(phi, int),
         }
-        assignments = minizinc(PATH, data=data)
+        assignments = minizinc(PATH, data=data, output_vars=["x", "objective"],
+                               keep=True, parallel=0)
 
         return self.assignment_to_array(assignments[0]["x"])
