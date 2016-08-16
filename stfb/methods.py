@@ -33,7 +33,8 @@ def _is_separable(deltas, verbose=False):
     problem.solve(verbose=verbose)
     return w.value is not None
 
-def pp(problem, max_iters, targets="attributes", can_critique=False):
+def pp(problem, max_iters, targets="attributes", can_critique=False,
+       debug=False):
     """The (Critiquing) Preference Perceptron [1]_.
 
     Contrary to the original algorithm:
@@ -56,6 +57,8 @@ def pp(problem, max_iters, targets="attributes", can_critique=False):
         possible features. The space may change when can_critique is True.
     can_critique : bool, defaults to False
         Whether critique queries are enabled.
+    debug : bool, defaults to False
+        Whether to spew debug output.
 
     Returns
     -------
@@ -74,18 +77,19 @@ def pp(problem, max_iters, targets="attributes", can_critique=False):
     w = np.zeros(problem.num_features, dtype=np.float32)
     w[targets] = np.ones(num_targets)
 
-    print(dedent("""\
-        == USER INFO ==
+    if debug:
+        print(dedent("""\
+            == USER INFO ==
 
-        w_star =
-        {}
+            w_star =
+            {}
 
-        x_star =
-        {}
-        phi(x_star) =
-        {}
-        """).format(problem.w_star, problem.x_star,
-                    problem.phi(problem.x_star, "all")))
+            x_star =
+            {}
+            phi(x_star) =
+            {}
+            """).format(problem.w_star, problem.x_star,
+                        problem.phi(problem.x_star, "all")))
 
     trace, dataset, deltas = [], [], []
     for it in range(max_iters):
@@ -111,34 +115,35 @@ def pp(problem, max_iters, targets="attributes", can_critique=False):
             rho, sign = problem.query_critique(x, x_bar, targets)
             assert rho > 0
 
-        phi = problem.phi(x, "all")
-        phi_bar = problem.phi(x_bar, "all")
-        print(dedent("""\
-            == ITERATION {it:3d} ==
+        if debug:
+            phi = problem.phi(x, "all")
+            phi_bar = problem.phi(x_bar, "all")
+            print(dedent("""\
+                == ITERATION {it:3d} ==
 
-            w =
-            {w}
-            loss = {loss}
+                w =
+                {w}
+                loss = {loss}
 
-            x =
-            {x}
-            phi(x) =
-            {phi}
+                x =
+                {x}
+                phi(x) =
+                {phi}
 
-            x_bar =
-            {x_bar}
-            phi(x_bar) =
-            {phi_bar}
+                x_bar =
+                {x_bar}
+                phi(x_bar) =
+                {phi_bar}
 
-            phi(x_bar) - phi(x) =
-            {delta}
-            is_separable = {is_separable}
+                phi(x_bar) - phi(x) =
+                {delta}
+                is_separable = {is_separable}
 
-            rho = {rho}
-            sign = {sign}
+                rho = {rho}
+                sign = {sign}
 
-            is_satisfied = {is_satisfied}
-            """).format(**locals()))
+                is_satisfied = {is_satisfied}
+                """).format(**locals()))
 
         t2 = time()
         if not is_satisfied:
@@ -161,13 +166,14 @@ def pp(problem, max_iters, targets="attributes", can_critique=False):
 
         num_targets = len(targets)
 
-        print(dedent("""\
-            new w =
-            {w}
+        if debug:
+            print(dedent("""\
+                new w =
+                {w}
 
-            features = {targets}
-            |features| = {num_targets}
-            """).format(**locals()))
+                features = {targets}
+                |features| = {num_targets}
+                """).format(**locals()))
 
         is_critique = rho is not None
         trace.append((loss, t0 + t1, is_critique))
