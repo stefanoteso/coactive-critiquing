@@ -103,16 +103,12 @@ class CanvasProblem(Problem):
         return super().phi(x, features, PATH, data)
 
     def infer(self, w, features):
-        assert w.shape == (self.num_features,)
-
-        targets = self.enumerate_features(features)
-        if (w[targets] == 0).all():
-            print("Warning: all-zero w!")
-
         PATH = "canvas-infer.mzn"
+
         with open(PATH, "wb") as fp:
             fp.write(_TEMPLATE.format(solve=_INFER).encode("utf-8"))
 
+        targets = self.enumerate_features(features)
         data = {
             "N_FEATURES": self.num_features,
             "TRUTH_VALUES": {-1, 1},
@@ -121,10 +117,8 @@ class CanvasProblem(Problem):
             "INPUT_X": [1] * self.num_attributes, # doesn't matter
             "INPUT_PHI": [1] * self.num_features, # doesn't matter
         }
-        assignments = minizinc(PATH, data=data, output_vars=["x", "objective"],
-                               keep=True, parallel=0)
 
-        return self.assignment_to_array(assignments[0]["x"])
+        return super().infer(w, features, PATH, data)
 
     def query_improvement(self, x, features):
         assert x.shape == (self.num_attributes,)

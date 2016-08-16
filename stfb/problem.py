@@ -144,7 +144,7 @@ class Problem(object):
 
         return phi
 
-    def infer(self, w, features):
+    def infer(self, w, features, template_path, data):
         """Searches for a maximum utility item.
 
         Parameters
@@ -159,7 +159,17 @@ class Problem(object):
         x : numpy.ndarray of shape (num_attributes,)
             An optimal configuration.
         """
-        raise NotImplementedError()
+        assert w.shape == (self.num_features,)
+
+        targets = self.enumerate_features(features)
+        if (w[targets] == 0).all():
+            print("Warning: all-zero w!")
+
+        assignments = minizinc(template_path, data=data,
+                               output_vars=["x", "objective"],
+                               keep=True, parallel=0)
+
+        return self.assignment_to_array(assignments[0]["x"])
 
     def query_improvement(self, x, features):
         """Searches for a local maximum utility modification.

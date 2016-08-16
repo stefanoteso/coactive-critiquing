@@ -243,18 +243,15 @@ class TravelProblem(Problem):
         return super().phi(x, features, PATH, data).astype(np.int32)
 
     def infer(self, w, features):
-        assert w.shape == (self.num_features,)
-
-        features = self.enumerate_features(features)
-        assert (w[features] != 0).any()
-
         PATH = "travel-infer.mzn"
+
         with open(PATH, "wb") as fp:
             fp.write(_TEMPLATE.format(solve=_INFER).encode("utf-8"))
 
+        targets = self.enumerate_features(features)
         data = {
             "N_FEATURES": self.num_features,
-            "ACTIVE_FEATURES": {j + 1 for j in features}, # doesn't matter
+            "ACTIVE_FEATURES": {j + 1 for j in targets},
             "T": self._horizon,
             "N_REGIONS": self._num_regions,
             "LOCATION_REGION": self._regions,
@@ -267,10 +264,8 @@ class TravelProblem(Problem):
             "INPUT_X": [0] * self.num_attributes, # doesn't matter
             "INPUT_PHI": [0] * self.num_features, # doesn't matter
         }
-        assignments = minizinc(PATH, data=data, output_vars=["x", "objective"],
-                               keep=True, parallel=0)
 
-        return self.assignment_to_array(assignments[0]["x"])
+        return super().infer(w, features, PATH, data)
 
     def query_improvement(self, x, features):
         assert x.shape == (self.num_attributes,)
