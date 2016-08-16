@@ -218,11 +218,8 @@ class TravelProblem(Problem):
         return float(max(self._num_locations, self._num_activities))
 
     def phi(self, x, features):
-        assert x.shape == (self.num_attributes,)
-
-        targets = self.enumerate_features(features)
-
         PATH = "travel-phi.mzn"
+
         with open(PATH, "wb") as fp:
             fp.write(_TEMPLATE.format(solve=_PHI).encode("utf-8"))
 
@@ -242,14 +239,8 @@ class TravelProblem(Problem):
             "INPUT_X": [0] * self.num_attributes, # doesn't matter
             "INPUT_PHI": [0] * self.num_features, # doesn't matter
         }
-        assignments = minizinc(PATH, data=data, output_vars=["phi"], keep=True)
 
-        phi = self.assignment_to_array(assignments[0]["phi"])
-        mask = np.ones_like(phi, dtype=bool)
-        mask[targets] = False
-        phi[mask] = 0.0
-
-        return phi.astype(np.int32)
+        return super().phi(x, features, PATH, data).astype(np.int32)
 
     def infer(self, w, features):
         assert w.shape == (self.num_features,)

@@ -1,6 +1,7 @@
 # -*- encoding: utf-8 -*-
 
 import numpy as np
+from pymzn import minizinc
 from itertools import combinations
 from sklearn.utils import check_random_state
 from textwrap import dedent
@@ -116,7 +117,7 @@ class Problem(object):
             return list(range(self.num_features))
         return features
 
-    def phi(self, x, features):
+    def phi(self, x, features, template_path, data):
         """Computes the feature representation of x.
 
         Parameters
@@ -131,7 +132,17 @@ class Problem(object):
         phi : numpy.ndarray of shape (num_features,)
             The feature representation of ``x``.
         """
-        raise NotImplementedError()
+        assert x.shape == (self.num_attributes,)
+
+        assignments = minizinc(template_path, data=data, output_vars=["phi"],
+                               keep=True)
+
+        phi = self.assignment_to_array(assignments[0]["phi"])
+        mask = np.ones_like(phi, dtype=bool)
+        mask[self.enumerate_features(features)] = False
+        phi[mask] = 0
+
+        return phi
 
     def infer(self, w, features):
         """Searches for a maximum utility item.
