@@ -154,7 +154,6 @@ def pp(problem, max_iters, targets, can_critique=False,
                 w[rho] = sign * problem.get_feature_radius()
                 targets.append(rho)
 
-                # Recompute the triangulation w.r.t. the new phi
                 new_deltas = []
                 for x_bar_1, x_1 in dataset:
                     delta_1 = (problem.phi(x_bar_1, targets) -
