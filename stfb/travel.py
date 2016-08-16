@@ -193,10 +193,6 @@ class TravelProblem(Problem):
             self.features.append(feature)
             j += 1
 
-        # TODO add user features:
-        # - local: sequence features
-        # - global: stay within a subsets of locations
-
         num_features = j - 1
 
         global _TEMPLATE
