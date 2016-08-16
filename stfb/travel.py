@@ -277,11 +277,11 @@ class TravelProblem(Problem):
         with open(PATH, "wb") as fp:
             fp.write(_TEMPLATE.format(solve=_IMPROVE).encode("utf-8"))
 
-        features = self.enumerate_features(features)
+        targets = self.enumerate_features(features)
         phi = self.phi(x, "all") # XXX the sum is on ACTIVE_FEATURES anyway
         data = {
             "N_FEATURES": self.num_features,
-            "ACTIVE_FEATURES": {j + 1 for j in features}, # doesn't matter
+            "ACTIVE_FEATURES": {j + 1 for j in targets},
             "T": self._horizon,
             "N_REGIONS": self._num_regions,
             "LOCATION_REGION": self._regions,
