@@ -172,6 +172,7 @@ class Problem(object):
         assert len(targets) < self.num_features, "requested critique in full feature space"
 
         scores = self.w_star * np.abs(self.phi(x_bar, "all") - self.phi(x, "all"))
+        scores = scores.astype(np.float64)
         scores[targets] = np.nan
         rho = np.nanargmax(scores)
 
