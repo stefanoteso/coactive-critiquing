@@ -5,16 +5,7 @@ from itertools import combinations
 from sklearn.utils import check_random_state
 from textwrap import dedent
 
-def sdepnormal(num_attributes, num_features, cliques, sparsity=0.1, rng=None):
-    """Samples from a 'sparse normal' distribution with dependent features.
-
-    First num_attributes * sparsity attributes are chosen as those that will
-    be non-zero. The non-zero features are taken to be those that depend on
-    the chosen non-zero attributes.
-
-    The dependency structure determines how many non-zero features there
-    will be.
-    """
+def _compute_sdep_mask(num_attributes, num_features, cliques, sparsity, rng):
     rng = check_random_state(rng)
 
     nnz_attributes = max(1, int(np.rint(num_attributes * sparsity)))
@@ -25,8 +16,38 @@ def sdepnormal(num_attributes, num_features, cliques, sparsity=0.1, rng=None):
         if set(clique).issubset(nz_attributes):
             nz_features.append(j)
 
+    return nz_features
+
+def sdeptrinomial(num_attributes, num_features, cliques, sparsity, rng=None):
+    """Samples from a {-1,0,1} uniform distribution with dependent features.
+
+    First num_attributes * sparsity attributes are chosen as those that will
+    be non-zero. The non-zero features are taken to be those that depend on
+    the chosen non-zero attributes.
+
+    The dependency structure determines how many non-zero features there
+    will be.
+    """
+    nz_features = _compute_sdep_mask(num_attributes, num_features, cliques,
+                                     sparsity, rng)
     x = np.zeros(num_features)
-    x[nz_features] = rng.normal(0, 1, size=(len(nz_features)))
+    x[nz_features] = 2 * rng.randint(0, 2, size=len(nz_features)) - 1
+    return x
+
+def sdepnormal(num_attributes, num_features, cliques, sparsity, rng=None):
+    """Samples from a 'sparse normal' distribution with dependent features.
+
+    First num_attributes * sparsity attributes are chosen as those that will
+    be non-zero. The non-zero features are taken to be those that depend on
+    the chosen non-zero attributes.
+
+    The dependency structure determines how many non-zero features there
+    will be.
+    """
+    nz_features = _compute_sdep_mask(num_attributes, num_features, cliques,
+                                     sparsity, rng)
+    x = np.zeros(num_features)
+    x[nz_features] = rng.normal(0, 1, size=len(nz_features))
     return x
 
 class Problem(object):
