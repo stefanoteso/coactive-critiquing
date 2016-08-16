@@ -107,7 +107,7 @@ def pp(problem, max_iters, targets, can_critique=False,
         delta = problem.phi(x_bar, targets) - problem.phi(x, targets)
         deltas.append(delta)
 
-        is_separable = _is_separable(deltas)
+        is_separable = _is_separable(deltas) if can_critique else False
         t1 = time() - t1
 
         rho, sign = None, None
