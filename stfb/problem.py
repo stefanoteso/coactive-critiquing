@@ -167,14 +167,26 @@ class Problem(object):
             The locally optimal critique feature or None if no critique.
         """
         assert x.shape == (self.num_attributes,)
+        assert x_bar.shape == (self.num_attributes,)
+        assert (x != x_bar).any()
 
         targets = self.enumerate_features(features)
-        assert len(targets) < self.num_features, "requested critique in full feature space"
+        assert len(targets) < self.num_features, \
+            "requested critique in full feature space"
 
-        scores = self.w_star * np.abs(self.phi(x_bar, "all") - self.phi(x, "all"))
+        scores = self.w_star * np.abs(self.phi(x_bar, "all") -
+                                      self.phi(x, "all"))
         scores = scores.astype(np.float64)
-        scores[targets] = np.nan
-        rho = np.nanargmax(scores)
+
+        if self.noise == 0:
+            scores[targets] = np.nan
+            rho = np.nanargmax(scores)
+        else:
+            scores[targets] = 0
+            pvals = scores / np.sum(scores)
+            rho = np.nonzero(self.rng.multinomial(1, pvals))[0][0]
+
+        assert rho not in targets
 
         #return rho, -np.sign(scores[rho])
         return rho, np.sign(self.w_star[rho])
