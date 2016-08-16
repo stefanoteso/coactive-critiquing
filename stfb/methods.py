@@ -33,7 +33,7 @@ def _is_separable(deltas, verbose=False):
     problem.solve(verbose=verbose)
     return w.value is not None
 
-def pp(problem, max_iters, targets="attributes", can_critique=False,
+def pp(problem, max_iters, targets, can_critique=False,
        debug=False):
     """The (Critiquing) Preference Perceptron [1]_.
 
@@ -51,7 +51,7 @@ def pp(problem, max_iters, targets="attributes", can_critique=False,
         The target problem.
     max_iters : positive int
         Number of iterations.
-    targets : str or list of int, defaults to "attributes"
+    targets : str or list of int
         Indices or description of features describing the configuration space.
         "attributes" means only attribute-level features, "all" means all
         possible features. The space may change when can_critique is True.
