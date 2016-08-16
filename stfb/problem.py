@@ -179,7 +179,7 @@ class Problem(object):
 
         return self.assignment_to_array(assignments[0]["x"])
 
-    def query_improvement(self, x, features):
+    def query_improvement(self, x, w_star, features, template_path, data):
         """Searches for a local maximum utility modification.
 
         If loss(x) is zero, i.e. x is optimal, it is return unmodified; under
@@ -189,15 +189,52 @@ class Problem(object):
         ----------
         x : numpy.ndarray of shape (num_attributes,)
             The configuration.
+        w_star : numpy.ndarray of shape (num_features,)
+            The (possibly perturbet) user's latent weight vector.
         features : list or "all" or "attributes"
             The features to be used in the computation.
+        template_path : str
+            Path to the minizinc problem file.
+        data : dict
+            Data to be passed to the minizinc solver.
 
         Returns
         -------
         x_bar : numpy.ndarray of shape (n_attributes,)
             The locally optimal modification.
         """
-        raise NotImplementedError()
+        assert x.shape == (self.num_attributes,)
+
+        if self.utility_loss(x, "all") == 0:
+            # XXX this is noiseless
+            return x
+
+        w_star = np.array(self.w_star)
+        if self.noise:
+            raise NotImplementedError()
+            w_star += self.rng.normal(0, self.noise, size=w_star.shape).astype(np.float32)
+
+        targets = self.enumerate_features(features)
+        assert (w_star[targets] != 0).any()
+
+        assignments = minizinc(template_path, data=data,
+                               output_vars=["x", "objective"],
+                               keep=True, parallel=0)
+
+        x_bar = self.assignment_to_array(assignments[0]["x"])
+        assert (x != x_bar).any(), (x, x_bar)
+
+        phi = self.phi(x, "all")
+        phi_bar = self.phi(x_bar, "all")
+        assert (phi != phi_bar).any()
+
+        utility = np.dot(w_star, self.phi(x, targets))
+        utility_bar = np.dot(w_star, self.phi(x_bar, targets))
+        assert utility_bar > utility, \
+            "u^k({}) = {} is not larger than u^k({}) = {}".format(
+                x_bar, utility_bar, x, utility)
+
+        return x_bar
 
     def query_critique(self, x, x_bar, features):
         """Searches for the maximum utility feature.

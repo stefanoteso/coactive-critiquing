@@ -121,25 +121,17 @@ class CanvasProblem(Problem):
         return super().infer(w, features, PATH, data)
 
     def query_improvement(self, x, features):
-        assert x.shape == (self.num_attributes,)
-
-        if self.utility_loss(x, "all") == 0:
-            # XXX this is noiseless
-            return x
-
         w_star = np.array(self.w_star)
         if self.noise:
             raise NotImplementedError()
-            w_star += self.rng.normal(0, self.noise, size=w_star.shape).astype(np.float32)
-
-        targets = self.enumerate_features(features)
-        assert (w_star[targets] != 0).any()
 
         PATH = "canvas-improve.mzn"
+
         with open(PATH, "wb") as fp:
             fp.write(_TEMPLATE.format(solve=_IMPROVE).encode("utf-8"))
 
-        phi = self.phi(x, "all") # XXX the sum is on ACTIVE_FEATURES anyway
+        targets = self.enumerate_features(features)
+        phi = self.phi(x, "all") # XXX the sum is over ACTIVE_FEATURES anyway
         data = {
             "N_FEATURES": self.num_features,
             "TRUTH_VALUES": {-1, 1},
@@ -148,19 +140,5 @@ class CanvasProblem(Problem):
             "INPUT_X": self.array_to_assignment(x, int),
             "INPUT_PHI": self.array_to_assignment(phi, int),
         }
-        assignments = minizinc(PATH, data=data, output_vars=["x", "objective"],
-                               keep=True, parallel=0)
 
-        x_bar = self.assignment_to_array(assignments[0]["x"])
-        assert (x != x_bar).any(), (x, x_bar)
-
-        phi_bar = self.phi(x_bar, "all")
-        assert (phi != phi_bar).any()
-
-        utility = np.dot(w_star, self.phi(x, targets))
-        utility_bar = np.dot(w_star, self.phi(x_bar, targets))
-        assert utility_bar > utility, \
-            "u^k({}) = {} is not larger than u^k({}) = {}".format(
-                x_bar, utility_bar, x, utility)
-
-        return x_bar
+        return super().query_improvement(x, w_star, features, PATH, data)

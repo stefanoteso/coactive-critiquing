@@ -268,26 +268,16 @@ class TravelProblem(Problem):
         return super().infer(w, features, PATH, data)
 
     def query_improvement(self, x, features):
-        assert x.shape == (self.num_attributes,)
-
-        if self.utility_loss(x, "all") == 0:
-            # XXX this is noiseless
-            return x
-
         w_star = np.array(self.w_star)
         if self.noise:
             raise NotImplementedError()
-            w_star += self.rng.normal(0, self.noise, size=w_star.shape).astype(np.float32)
-
-        features = self.enumerate_features(features)
-        assert (w_star[features] != 0).any()
-
-        utility = np.dot(self.w_star, self.phi(x, "all"))
 
         PATH = "travel-improve.mzn"
+
         with open(PATH, "wb") as fp:
             fp.write(_TEMPLATE.format(solve=_IMPROVE).encode("utf-8"))
 
+        features = self.enumerate_features(features)
         phi = self.phi(x, "all") # XXX the sum is on ACTIVE_FEATURES anyway
         data = {
             "N_FEATURES": self.num_features,
@@ -304,7 +294,5 @@ class TravelProblem(Problem):
             "INPUT_X": self.array_to_assignment(x, int),
             "INPUT_PHI": self.array_to_assignment(phi, int),
         }
-        assignments = minizinc(PATH, data=data, output_vars=["x", "objective"],
-                               keep=True, parallel=0)
 
-        return self.assignment_to_array(assignments[0]["x"])
+        return super().query_improvement(x, w_star, features, PATH, data)
