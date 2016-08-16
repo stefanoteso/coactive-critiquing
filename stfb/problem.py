@@ -126,6 +126,10 @@ class Problem(object):
             The object.
         features : list or "all" or "attributes"
             The features to be used in the computation.
+        template_path : str
+            Path to the minizinc problem file.
+        data : dict
+            Data to be passed to the minizinc solver.
 
         Returns
         -------
@@ -153,6 +157,10 @@ class Problem(object):
             The weight vector.
         features : list or "all" or "attributes"
             The features to be used in the computation.
+        template_path : str
+            Path to the minizinc problem file.
+        data : dict
+            Data to be passed to the minizinc solver.
 
         Returns
         -------
