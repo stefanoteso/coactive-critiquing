@@ -12,7 +12,7 @@ _METHOD_TO_COLORS = {
 }
 
 def _get_ticks(x):
-    return np.floor(x / 10)
+    return np.ceil(x / 10)
 
 def _draw_matrices(ax, matrices, args, mean=False, cumulative=False):
     max_x, max_y = None, None
