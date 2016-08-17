@@ -5,15 +5,6 @@ import cvxpy as cvx
 from textwrap import dedent
 from time import time
 
-# NOTE the user must be able to answer "no change", or alpha-informativity
-# breaks and convergence can not occur.
-
-# NOTE utility convergences, weights may not (especially when features are
-# discrete, and so the updates are discrete as well.)
-
-# NOTE different configurations may have the same utility, so the termination
-# condition is looser than strictly required
-
 # TODO the 'perturbed' pp algorithm is preferred for noisy users.
 
 def _is_separable(deltas, verbose=False):
