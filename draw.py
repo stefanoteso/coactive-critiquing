@@ -14,7 +14,7 @@ _METHOD_TO_COLORS = {
 def _get_ticks(x):
     return np.ceil(x / 10)
 
-def _draw_matrices(ax, matrices, args, mean=False, cumulative=False):
+def _draw_matrices(ax, matrices, args, mean=False, cumulative=False, regret=False):
     max_x, max_y = None, None
     for i, (matrix, arg) in enumerate(zip(matrices, args)):
         fg, bg = _METHOD_TO_COLORS[arg.method]
@@ -25,13 +25,17 @@ def _draw_matrices(ax, matrices, args, mean=False, cumulative=False):
 
         x = np.arange(current_max_x)
 
-        if cumulative:
+        if cumulative or regret:
             matrix = matrix.cumsum(axis=1)
 
         if mean:
             y = np.mean(matrix, axis=0)
         else:
             y = np.median(matrix, axis=0)
+
+        if regret:
+            y /= np.arange(matrix.shape[1]) + 1
+
         yerr = np.std(matrix, axis=0) / np.sqrt(matrix.shape[0])
 
         current_max_y = max(y + yerr)
@@ -61,6 +65,10 @@ def main():
     loss_ax.set_xlabel("Number of iterations")
     loss_ax.set_ylabel("Utility loss")
 
+    regret_fig, regret_ax = plt.subplots(1, 1)
+    regret_ax.set_xlabel("Number of iterations")
+    regret_ax.set_ylabel("Regret")
+
     time_fig, time_ax = plt.subplots(1, 1)
     time_ax.set_xlabel("Number of iterations")
     time_ax.set_ylabel("Cumulative time (seconds)")
@@ -81,10 +89,12 @@ def main():
                time_matrices[-1].shape == \
                query_matrices[-1].shape
     _draw_matrices(loss_ax, loss_matrices, experiment_args)
+    _draw_matrices(regret_ax, loss_matrices, experiment_args, regret=True)
     _draw_matrices(time_ax, time_matrices, experiment_args, cumulative=True)
     _draw_matrices(query_ax, query_matrices, experiment_args, mean=True)
 
     loss_fig.savefig(args.png_basename + "_loss.png", bbox_inches="tight")
+    regret_fig.savefig(args.png_basename + "_regret.png", bbox_inches="tight")
     time_fig.savefig(args.png_basename + "_time.png", bbox_inches="tight")
     query_fig.savefig(args.png_basename + "_query.png", bbox_inches="tight")
 
