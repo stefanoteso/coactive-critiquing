@@ -19,17 +19,24 @@ PROBLEMS = {
                                rng=rng),
 }
 
+LEARNERS = {
+    "perceptron": stfb.Perceptron,
+    "exp-perceptron": stfb.ExpPerceptron,
+}
+
 METHODS = {
     "pp-attr":
         lambda args, problem:
-            stfb.pp(problem, args.max_iters, "attributes", debug=args.debug),
+            stfb.pp(problem, args.max_iters, "attributes",
+                    Learner=LEARNERS[args.update], debug=args.debug),
     "pp-all":
         lambda args, problem:
-            stfb.pp(problem, args.max_iters, "all", debug=args.debug),
+            stfb.pp(problem, args.max_iters, "all",
+                    Learner=LEARNERS[args.update], debug=args.debug),
     "cpp":
         lambda args, problem:
             stfb.pp(problem, args.max_iters, "attributes", can_critique=True,
-                    debug=args.debug),
+                    Learner=LEARNERS[args.update], debug=args.debug),
 }
 
 def _get_experiment_name(args):
