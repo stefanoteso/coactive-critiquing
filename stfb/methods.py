@@ -7,6 +7,53 @@ from time import time
 
 # TODO the 'perturbed' pp algorithm is preferred for noisy users.
 
+class Perceptron(object):
+    """Implementation of the standard perceptron."""
+    def __init__(self, problem, features, **kwargs):
+        debug = kwargs.pop("debug", False)
+
+        targets = problem.enumerate_features(features)
+
+        # TODO sample form a standard normal if debug is False
+        # XXX for sparse users perhaps sample from a sparse distribution
+        self.w = np.zeros(problem.num_features, dtype=np.float32)
+        self.w[targets] = np.ones(len(targets))
+
+        self._debug = debug
+
+    def default_weight(self, num_targets):
+        # TODO sample from a standard normal if debug is False
+        return 1.0
+
+    def update(self, delta):
+        self.w += delta
+
+class ExpPerceptron(object):
+    """Implementation of the sparse (exponentiated) perceptron [KW97]_.
+
+    References
+    ----------
+    .. [KW97] Kivinen and Warmuth, *Exponentiated Gradient Versus Gradient
+        Descent for Linear Predictors*, 1997, Information and Computation
+    """
+    def __init__(self, problem, features, **kwargs):
+        max_iters = kwargs.pop("max_iters", 100)
+        debug = kwargs.pop("debug", False)
+
+        targets = problem.enumerate_features(features)
+
+        self.w = np.zeros(problem.num_features, dtype=np.float32)
+        self.w[targets] = np.ones(len(targets)) / len(targets)
+        self.eta = 1 / (2 * problem.get_feature_radius() * np.sqrt(max_iters))
+
+    def default_weight(self, num_targets):
+        return 1 / num_targets
+
+    def update(self, delta):
+        v = self.w * np.exp(self.eta * delta)
+        assert (v >= 0).all()
+        self.w = v / np.sum(v)
+
 def _is_separable(deltas, verbose=False):
     """Checks whether a dataset is separable using hard SVM."""
     n_examples = len(deltas)
@@ -24,7 +71,7 @@ def _is_separable(deltas, verbose=False):
     problem.solve(verbose=verbose)
     return w.value is not None
 
-def pp(problem, max_iters, targets, can_critique=False,
+def pp(problem, max_iters, targets, Learner=Perceptron, can_critique=False,
        debug=False):
     """The (Critiquing) Preference Perceptron [1]_.
 
@@ -48,6 +95,8 @@ def pp(problem, max_iters, targets, can_critique=False,
         possible features. The space may change when can_critique is True.
     can_critique : bool, defaults to False
         Whether critique queries are enabled.
+    Learner : class, defaults to Perceptron
+        The learner to be used.
     debug : bool, defaults to False
         Whether to spew debug output.
 
@@ -62,11 +111,9 @@ def pp(problem, max_iters, targets, can_critique=False,
     ----------
     .. [1] Shivaswamy and Joachims, *Coactive Learning*, JAIR 53 (2015)
     """
-    targets = problem.enumerate_features(targets)
-    num_targets = len(targets)
+    learner = Learner(problem, targets, max_iters=max_iters, debug=debug)
 
-    w = np.zeros(problem.num_features, dtype=np.float32)
-    w[targets] = np.ones(num_targets)
+    targets = problem.enumerate_features(targets)
 
     if debug:
         print(dedent("""\
@@ -85,7 +132,7 @@ def pp(problem, max_iters, targets, can_critique=False,
     trace, dataset, deltas = [], [], []
     for it in range(max_iters):
         t0 = time()
-        x = problem.infer(w, targets)
+        x = problem.infer(learner.w, targets)
         t0 = time() - t0
 
         loss = problem.utility_loss(x, "all")
@@ -107,6 +154,7 @@ def pp(problem, max_iters, targets, can_critique=False,
             assert rho > 0
 
         if debug:
+            w = learner.w
             phi = problem.phi(x, "all")
             phi_bar = problem.phi(x_bar, "all")
             print(dedent("""\
@@ -140,10 +188,10 @@ def pp(problem, max_iters, targets, can_critique=False,
         if not is_satisfied:
             if rho is None:
                 assert not can_critique or (delta != 0).any(), "phi(x) and phi(x_bar) projections are identical"
-                w += delta
+                learner.update(delta)
             else:
-                w[rho] = sign * problem.get_feature_radius()
                 targets.append(rho)
+                learner.w[rho] = sign * learner.default_weight(len(targets))
 
                 new_deltas = []
                 for x_bar_1, x_1 in dataset:
@@ -154,9 +202,10 @@ def pp(problem, max_iters, targets, can_critique=False,
 
         t2 = time() - t2
 
-        num_targets = len(targets)
 
         if debug:
+            w = learner.w
+            num_targets = len(targets)
             print(dedent("""\
                 new w =
                 {w}
