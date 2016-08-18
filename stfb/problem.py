@@ -175,7 +175,7 @@ class Problem(object):
 
         assignments = minizinc(template_path, data=data,
                                output_vars=["x", "objective"],
-                               keep=True, parallel=0)
+                               keep=True)
 
         return self.assignment_to_array(assignments[0]["x"])
 
@@ -219,7 +219,7 @@ class Problem(object):
 
         assignments = minizinc(template_path, data=data,
                                output_vars=["x", "objective"],
-                               keep=True, parallel=0)
+                               keep=True)
 
         x_bar = self.assignment_to_array(assignments[0]["x"])
         assert (x != x_bar).any(), (x, x_bar)
