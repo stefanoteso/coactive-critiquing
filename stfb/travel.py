@@ -42,15 +42,14 @@ var int: travel_time = sum(travel);
 array[1..T] of var REGIONS1: regions = [if location[t] == NO_LOCATION then NO_REGION else LOCATION_REGION[location[t]] endif | t in 1..T];
 array[REGIONS1] of var 0..N_LOCATIONS: region_counts;
 constraint global_cardinality(regions, [i | i in REGIONS1], region_counts);
+var int: n_different_regions =
+    among(region_counts, 1..N_REGIONS);
 
 % count number of distinct locations
 array[LOCATIONS] of var int: location_counts;
+constraint global_cardinality(location, [i | i in LOCATIONS], location_counts);
 var int: n_different_locations =
     among(location_counts, 1..N_LOCATIONS);
-
-constraint
-    global_cardinality(location, [i | i in LOCATIONS],
-                       location_counts);
 
 % bounds on duration
 constraint forall(i in 1..T)(duration[i] >= 0);
@@ -163,6 +162,8 @@ class TravelProblem(Problem):
             self.features.append(feature)
             j += 1
 
+        num_base_features = j - 1
+
         # Number of distinct locations
         feature = "constraint phi[{j}] = n_different_locations;".format(**locals())
         self.features.append(feature)
@@ -178,15 +179,18 @@ class TravelProblem(Problem):
         self.features.append(feature)
         j += 1
 
-        num_base_features = j - 1
-
         # Regions
         for region in range(1, self._num_regions + 1):
             feature = "constraint phi[{j}] = 2 * (region_counts[{region}] + travel_time == T) - 1;".format(**locals())
             self.features.append(feature)
             j += 1
 
-        # imply locations
+        # Number of different regions
+        features = "constraint phi[{j}] = n_different_regions;".format(**locals())
+        self.features.append(features)
+        j += 1
+
+        # Soft dependencies between locations
         for location1, location2 in combinations(range(1, self._num_locations + 1), 2):
             feature = "constraint phi[{j}] = 2 * (location_counts[{location1}] = 0 \/ location_counts[{location2}] > 0) - 1;".format(**locals())
             feature = "constraint phi[{j}] = 2 * (location_counts[{location2}] = 0 \/ location_counts[{location1}] > 0) - 1;".format(**locals())
