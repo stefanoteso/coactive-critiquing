@@ -43,8 +43,7 @@ var float: objective =
     sum(i in ATTRIBUTES)(x[i] != INPUT_X[i]);
 
 constraint
-    sum(j in ACTIVE_FEATURES)(W[j] * phi[j]) >
-        sum(j in ACTIVE_FEATURES)(W[j] * INPUT_PHI[j]);
+    sum(j in ACTIVE_FEATURES)(W[j] * (phi[j] - INPUT_PHI[j])) > 0;
 
 constraint objective >= 1;
 
@@ -73,7 +72,7 @@ class CanvasProblem(Problem):
             _TEMPLATE.format(canvas_size=canvas_size,
                              phis="\n".join(self.features), solve="{solve}")
 
-        w_star = 2 * rng.randint(0, 2, size=num_features) - 1
+        w_star = rng.normal(size=num_features)
         if sparsity < 1.0:
             nnz_features = max(1, int(np.ceil(sparsity * num_features)))
             zeros = rng.permutation(num_features)[nnz_features:]
