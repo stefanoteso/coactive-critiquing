@@ -265,8 +265,15 @@ class Problem(object):
             rho = np.nanargmax(scores)
         else:
             scores[targets] = 0
-            pvals = scores / np.sum(scores)
-            rho = np.nonzero(self.rng.multinomial(1, pvals))[0][0]
+            if (scores != 0).any():
+                pvals = scores / np.sum(scores)
+                rho = np.nonzero(self.rng.multinomial(1, pvals))[0][0]
+            else:
+                # this can happen when x_bar is better than x only for features
+                # that already belong to `targets`, in which case all other
+                # features are equiprobable for critiquing purposes
+                non_targets = list(set(range(self.num_features)) - set(targets))
+                rho = non_targets[self.rng.randint(len(non_targets))]
 
         assert rho not in targets
 
