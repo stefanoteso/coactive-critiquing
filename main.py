@@ -87,17 +87,19 @@ def main():
     rng = np.random.RandomState(args.seed)
     pymzn.debug(args.verbose)
 
+    SEP = "=" * 80
+
     # Run the main loop
     all_losses, all_times, all_is_critiques = [], [], []
     for i in range(args.num_users):
-        print("==== USER {}/{} ====".format(i, args.num_users))
+        print("{}\nUSER {}/{}\n{}".format(SEP, i, args.num_users, SEP))
         problem = PROBLEMS[args.problem](args, rng)
         num_iters, trace = METHODS[args.method](args, problem)
         losses, times, is_critiques = zip(*trace)
         all_losses.append(losses)
         all_times.append(times)
         all_is_critiques.append(is_critiques)
-        print("\n\n")
+        print("\n" * 5)
 
     # Dump the results on disk
     name = _get_experiment_name(args)
