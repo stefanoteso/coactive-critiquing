@@ -209,11 +209,6 @@ class Problem(object):
             # XXX this is noiseless
             return x
 
-        w_star = np.array(self.w_star)
-        if self.noise:
-            raise NotImplementedError()
-            w_star += self.rng.normal(0, self.noise, size=w_star.shape).astype(np.float32)
-
         targets = self.enumerate_features(features)
         assert (w_star[targets] != 0).any()
 
