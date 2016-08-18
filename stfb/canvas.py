@@ -18,7 +18,7 @@ set of int: FEATURES = 1..N_FEATURES;
 set of int: ACTIVE_FEATURES;
 set of int: TRUTH_VALUES;
 
-array[FEATURES] of int: W;
+array[FEATURES] of float: W;
 array[FEATURES] of var TRUTH_VALUES: phi;
 array[FEATURES] of var TRUTH_VALUES: INPUT_PHI;
 array[ATTRIBUTES] of var 1..{canvas_size}: x;
@@ -32,14 +32,14 @@ array[ATTRIBUTES] of 1..{canvas_size}: INPUT_X;
 _PHI = "solve satisfy;"
 
 _INFER = """\
-var int: objective =
+var float: objective =
     sum(j in ACTIVE_FEATURES)(W[j] * phi[j]);
 
 solve maximize objective;
 """
 
 _IMPROVE = """\
-var int: objective =
+var float: objective =
     sum(i in ATTRIBUTES)(x[i] != INPUT_X[i]);
 
 constraint
@@ -113,7 +113,7 @@ class CanvasProblem(Problem):
             "N_FEATURES": self.num_features,
             "TRUTH_VALUES": {-1, 1},
             "ACTIVE_FEATURES": {j + 1 for j in targets},
-            "W": self.array_to_assignment(w, int),
+            "W": self.array_to_assignment(w, float),
             "INPUT_X": [1] * self.num_attributes, # doesn't matter
             "INPUT_PHI": [1] * self.num_features, # doesn't matter
         }
@@ -136,7 +136,7 @@ class CanvasProblem(Problem):
             "N_FEATURES": self.num_features,
             "TRUTH_VALUES": {-1, 1},
             "ACTIVE_FEATURES": {j + 1 for j in targets},
-            "W": self.array_to_assignment(w_star, int),
+            "W": self.array_to_assignment(w_star, float),
             "INPUT_X": self.array_to_assignment(x, int),
             "INPUT_PHI": self.array_to_assignment(phi, int),
         }
