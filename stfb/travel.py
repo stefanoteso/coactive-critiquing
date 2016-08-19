@@ -271,7 +271,7 @@ class TravelProblem(Problem):
     def query_improvement(self, x, features):
         w_star = np.array(self.w_star)
         if self.noise:
-            raise NotImplementedError()
+            w_star += self.rng.normal(0, self.noise, size=w_star.shape).astype(np.float32)
 
         PATH = "travel-improve.mzn"
 
