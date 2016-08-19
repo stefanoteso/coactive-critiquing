@@ -256,9 +256,8 @@ class Problem(object):
         assert len(targets) < self.num_features, \
             "requested critique in full feature space"
 
-        scores = self.w_star * np.abs(self.phi(x_bar, "all") -
-                                      self.phi(x, "all"))
-        scores = scores.astype(np.float64)
+        scores = self.w_star * (self.phi(x_bar, "all") - self.phi(x, "all"))
+        scores = np.abs(scores).astype(np.float64)
 
         if self.noise == 0:
             scores[targets] = np.nan
