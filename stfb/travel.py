@@ -95,7 +95,7 @@ set of int: FEATURES = 1..N_FEATURES;
 
 set of int: ACTIVE_FEATURES;
 
-array[FEATURES] of int: W;
+array[FEATURES] of float: W;
 array[FEATURES] of var int: phi;
 array[FEATURES] of int: INPUT_PHI;
 
@@ -107,7 +107,7 @@ array[FEATURES] of int: INPUT_PHI;
 _PHI = "solve satisfy;"
 
 _INFER = """\
-var int: objective =
+var float: objective =
     sum(feat in ACTIVE_FEATURES)(W[feat] * phi[feat]);
 
 solve maximize objective;
@@ -118,8 +118,7 @@ var int: objective =
     sum(t in 1..3*T-1)(x[t] != INPUT_X[t]);
 
 constraint
-    sum(feat in ACTIVE_FEATURES)(W[feat] * phi[feat]) >
-        sum(feat in ACTIVE_FEATURES)(W[feat] * INPUT_PHI[feat]);
+    sum(feat in ACTIVE_FEATURES)(W[feat] * (phi[feat] - INPUT_PHI[feat])) > 0;
 
 constraint objective >= 1;
 
@@ -205,7 +204,7 @@ class TravelProblem(Problem):
             _TEMPLATE.format(phis="\n".join(self.features), solve="{solve}")
 
         # Sample the weight vector
-        w_star = 2 * rng.randint(0, 2, size=num_features) - 1
+        w_star = rng.normal(size=num_features)
         if sparsity < 1.0:
             nnz_features = max(1, int(np.ceil(sparsity * num_features)))
             zeros = rng.permutation(num_features)[nnz_features:]
@@ -261,7 +260,7 @@ class TravelProblem(Problem):
             "LOCATION_ACTIVITIES": self._location_activities,
             "LOCATION_COST": self._location_cost,
             "TRAVEL_TIME": self._travel_time,
-            "W": self.array_to_assignment(w, int),
+            "W": self.array_to_assignment(w, float),
             "INPUT_X": [0] * self.num_attributes, # doesn't matter
             "INPUT_PHI": [0] * self.num_features, # doesn't matter
         }
@@ -291,7 +290,7 @@ class TravelProblem(Problem):
             "LOCATION_ACTIVITIES": self._location_activities,
             "LOCATION_COST": self._location_cost,
             "TRAVEL_TIME": self._travel_time,
-            "W": self.array_to_assignment(w_star, int),
+            "W": self.array_to_assignment(w_star, float),
             "INPUT_X": self.array_to_assignment(x, int),
             "INPUT_PHI": self.array_to_assignment(phi, int),
         }
