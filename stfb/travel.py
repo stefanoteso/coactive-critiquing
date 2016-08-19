@@ -193,6 +193,7 @@ class TravelProblem(Problem):
         for location1, location2 in combinations(range(1, self._num_locations + 1), 2):
             feature = "constraint phi[{j}] = 2 * (location_counts[{location1}] = 0 \/ location_counts[{location2}] > 0) - 1;".format(**locals())
             self.features.append(feature)
+            j += 1
             feature = "constraint phi[{j}] = 2 * (location_counts[{location2}] = 0 \/ location_counts[{location1}] > 0) - 1;".format(**locals())
             self.features.append(feature)
             j += 1
