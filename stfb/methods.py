@@ -54,10 +54,10 @@ class ExpPerceptron(object):
         assert (v >= 0).all()
         self.w = v / np.sum(v)
 
-def _is_separable(deltas, verbose=False):
+def _is_separable(deltas, verbose=False, rng=None):
     """Checks whether a dataset is separable using hard SVM."""
     n_examples = len(deltas)
-    if n_examples < 1:
+    if n_examples < 2:
         return True
     n_features = len(deltas[0])
 
@@ -71,8 +71,25 @@ def _is_separable(deltas, verbose=False):
     problem.solve(verbose=verbose)
     return w.value is not None
 
+def _is_separable_soft(deltas, verbose=False, rng=None):
+    from sklearn import svm
+
+    n_examples = len(deltas)
+    if n_examples < 2:
+        return True
+
+    max_iter = 10 * n_examples**3
+
+    X = deltas[:-1] + [-deltas[-1]]
+    y = [1] * (n_examples - 1) + [-1]
+
+    model = svm.LinearSVC(C=1e6, max_iter=max_iter, random_state=rng)
+    model.fit(X, y)
+
+    return model.n_iter_ < max_iter
+
 def pp(problem, max_iters, targets, Learner=Perceptron, can_critique=False,
-       debug=False):
+       rng=None, debug=False):
     """The (Critiquing) Preference Perceptron [1]_.
 
     Contrary to the original algorithm:
@@ -97,6 +114,8 @@ def pp(problem, max_iters, targets, Learner=Perceptron, can_critique=False,
         Whether critique queries are enabled.
     Learner : class, defaults to Perceptron
         The learner to be used.
+    rng : int or None
+        The RNG.
     debug : bool, defaults to False
         Whether to spew debug output.
 
@@ -145,7 +164,7 @@ def pp(problem, max_iters, targets, Learner=Perceptron, can_critique=False,
         delta = problem.phi(x_bar, targets) - problem.phi(x, targets)
         deltas.append(delta)
 
-        is_separable = _is_separable(deltas) if can_critique else False
+        is_separable = _is_separable_soft(deltas, rng=rng) if can_critique else False
         t1 = time() - t1
 
         rho, sign = None, None
@@ -187,7 +206,7 @@ def pp(problem, max_iters, targets, Learner=Perceptron, can_critique=False,
         t2 = time()
         if not is_satisfied:
             if rho is None:
-                assert not can_critique or (delta != 0).any(), "phi(x) and phi(x_bar) projections are identical"
+                #assert not can_critique or (delta != 0).any(), "phi(x) and phi(x_bar) projections are identical"
                 learner.update(delta)
             else:
                 targets.append(rho)

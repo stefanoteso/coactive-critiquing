@@ -26,17 +26,17 @@ LEARNERS = {
 
 METHODS = {
     "pp-attr":
-        lambda args, problem:
+        lambda args, problem, rng:
             stfb.pp(problem, args.max_iters, "attributes",
-                    Learner=LEARNERS[args.update], debug=args.debug),
+                    Learner=LEARNERS[args.update], rng=rng, debug=args.debug),
     "pp-all":
-        lambda args, problem:
+        lambda args, problem, rng:
             stfb.pp(problem, args.max_iters, "all",
-                    Learner=LEARNERS[args.update], debug=args.debug),
+                    Learner=LEARNERS[args.update], rng=rng, debug=args.debug),
     "cpp":
-        lambda args, problem:
+        lambda args, problem, rng:
             stfb.pp(problem, args.max_iters, "attributes", can_critique=True,
-                    Learner=LEARNERS[args.update], debug=args.debug),
+                    Learner=LEARNERS[args.update], rng=rng, debug=args.debug),
 }
 
 def _get_experiment_name(args):
@@ -94,7 +94,7 @@ def main():
     for i in range(args.num_users):
         print("{}\nUSER {}/{}\n{}".format(SEP, i, args.num_users, SEP))
         problem = PROBLEMS[args.problem](args, rng)
-        num_iters, trace = METHODS[args.method](args, problem)
+        num_iters, trace = METHODS[args.method](args, problem, rng)
         losses, times, is_critiques = zip(*trace)
         all_losses.append(losses)
         all_times.append(times)
