@@ -15,7 +15,8 @@ import numpy as np
 from numpy.linalg import matrix_rank, norm
 from sklearn.decomposition import PCA
 from scipy.spatial import ConvexHull
-
+from scipy.special import expit
+import cvxpy as cvx
 
 def euclidean(a, b):
     return norm(a - b)
@@ -56,6 +57,30 @@ def convex_hull_distance(x, p):
         A point in R^d.
     """
     vertices = convex_hull_vertices(x)
-    return min([euclidean(vertex, p)] for vertex in vertices)
+    return min([euclidean(vertex, p) for vertex in vertices])
+
+
+def _hard_check(x, verbose=False, rng=None):
+    """Checks whether a dataset is separable using hard SVM."""
+    n, d = x.shape
+    if n < 2:
+        return True
+
+    w = cvx.Variable(d)
+
+    norm_w = cvx.norm(w, 2)
+    constraints = [cvx.sum_entries(x[i] * w) >= 1 for i in range(n)]
+
+    problem = cvx.Problem(cvx.Minimize(norm_w), constraints)
+    problem.solve(verbose=verbose)
+    return w.value is not None
+
+
+def is_separable(x, p, rng=None):
+    if _hard_check(np.vstack((x, p)), rng=rng):
+        return 1.0
+    dist = convex_hull_distance(x, p)
+    return expit(-dist)
     
+
 
