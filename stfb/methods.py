@@ -4,6 +4,7 @@ import numpy as np
 import cvxpy as cvx
 from textwrap import dedent
 from time import time
+from stfb.hull import is_separable
 
 # TODO the 'perturbed' pp algorithm is preferred for noisy users.
 
@@ -23,7 +24,7 @@ class Perceptron(object):
 
     def default_weight(self, num_targets):
         # TODO sample from a standard normal if debug is False
-        return 1.0
+        return 0.0
 
     def update(self, delta):
         self.w += delta
@@ -134,6 +135,12 @@ def pp(problem, max_iters, targets, Learner=Perceptron, can_critique=False,
 
     targets = problem.enumerate_features(targets)
 
+    def delta(xs):
+        if isinstance(xs, tuple):
+            return problem.phi(xs[0], targets) - problem.phi(xs[1], targets)
+        return [problem.phi(x_bar, targets) - problem.phi(x, targets)
+                for x_bar, x in xs]
+
     if debug:
         print(dedent("""\
             == USER INFO ==
@@ -147,7 +154,7 @@ def pp(problem, max_iters, targets, Learner=Perceptron, can_critique=False,
             {}
             """).format(problem.w_star, problem.x_star,
                         problem.phi(problem.x_star, "all")))
-
+    th = 0.5
     trace, dataset, deltas = [], [], []
     for it in range(max_iters):
         t0 = time()
@@ -159,17 +166,14 @@ def pp(problem, max_iters, targets, Learner=Perceptron, can_critique=False,
 
         t1 = time()
         is_satisfied = (x == x_bar).all()
-        dataset.append((x_bar, x))
 
-        delta = problem.phi(x_bar, targets) - problem.phi(x, targets)
-        deltas.append(delta)
-
-        is_separable = _is_separable_soft(deltas, rng=rng) if can_critique else False
+        d = delta((x_bar, x))
+        separable = is_separable(np.array(delta(dataset)), d, rng=rng) >= th
         t1 = time() - t1
 
-        rho, sign = None, None
+        rho = None
         if can_critique and not is_satisfied and not is_separable:
-            rho, sign = problem.query_critique(x, x_bar, targets)
+            rho, _ = problem.query_critique(x, x_bar, targets)
             assert rho > 0
 
         if debug:
@@ -194,31 +198,21 @@ def pp(problem, max_iters, targets, Learner=Perceptron, can_critique=False,
                 {phi_bar}
 
                 phi(x_bar) - phi(x) =
-                {delta}
-                is_separable = {is_separable}
+                {d}
+                separable = {separable}
 
                 rho = {rho}
-                sign = {sign}
 
                 is_satisfied = {is_satisfied}
                 """).format(**locals()))
 
         t2 = time()
         if not is_satisfied:
-            if rho is None:
-                #assert not can_critique or (delta != 0).any(), "phi(x) and phi(x_bar) projections are identical"
-                learner.update(delta)
-            else:
+            if rho is not None:
                 targets.append(rho)
-                learner.w[rho] = sign * learner.default_weight(len(targets))
-
-                new_deltas = []
-                for x_bar_1, x_1 in dataset:
-                    delta_1 = (problem.phi(x_bar_1, targets) -
-                               problem.phi(x_1, targets))
-                    new_deltas.append(delta_1)
-                deltas = new_deltas
-
+                learner.w[rho] = learner.default_weight(len(targets))
+            learner.update(delta((x_bar, x)))
+            dataset.append((x_bar, x))
         t2 = time() - t2
 
 
