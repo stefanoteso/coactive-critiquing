@@ -121,9 +121,10 @@ def pp(problem, max_iters, targets, Learner=Perceptron, can_critique=False,
     if num_critiques is not None:
         critique_iters = set(rng.permutation(max_iters)[:num_critiques])
 
-    s = 0.0
     alpha = 50.0
-    last_critique = True
+
+    s = 0.0
+    ask_critique = True
     trace, dataset, deltas = [], [], []
     for it in range(max_iters):
         t0 = time()
@@ -137,17 +138,16 @@ def pp(problem, max_iters, targets, Learner=Perceptron, can_critique=False,
         is_satisfied = (x == x_bar).all()
         d = delta((x_bar, x), targets)
 
-        p, ask_critique, last_critique = 0.0, False, False
+        p, ask_critique = 0.0, False
         if not can_critique:
             pass
         elif it in critique_iters:
-            p, ask_critique, last_critique = 1.0, True, True
+            p, ask_critique = 1.0, True
         elif len(dataset) > 0 and not is_separable(np.vstack((deltas, d))):
-            if not last_critique:
+            if not ask_critique:
                 s += 1
             p = (alpha * s) / (alpha * s  + (it + 1))
-            ask_critique = rng.binomial(1, p)
-            last_critique = bool(ask_critique)
+            ask_critique = bool(rng.binomial(1, p))
         t1 = time() - t1
 
         rho = None
