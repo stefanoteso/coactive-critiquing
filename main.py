@@ -25,23 +25,25 @@ LEARNERS = {
 
 METHODS = {
     "pp-attr":
-        lambda args, problem, rng:
+        lambda args, problem, num_critiques, rng:
             stfb.pp(problem, args.max_iters, "attributes",
                     Learner=LEARNERS[args.update], rng=rng, debug=args.debug),
     "pp-all":
-        lambda args, problem, rng:
+        lambda args, problem, num_critiques, rng:
             stfb.pp(problem, args.max_iters, "all",
                     Learner=LEARNERS[args.update], rng=rng, debug=args.debug),
     "cpp":
-        lambda args, problem, rng:
+        lambda args, problem, num_critiques, rng:
             stfb.pp(problem, args.max_iters, "attributes", can_critique=True,
+                    num_critiques=num_critiques,
                     Learner=LEARNERS[args.update], rng=rng, debug=args.debug),
 }
 
 def _get_experiment_name(args):
     return "_".join(map(str, [
         args.problem, args.method, args.num_users, args.max_iters,
-        args.noise, args.sparsity, args.update, args.seed]))
+        args.drone is not None, args.noise, args.sparsity, args.update,
+        args.seed]))
 
 def _to_matrix(l, rows=None, cols=None):
     if rows is None:
@@ -87,20 +89,24 @@ def main():
 
     SEP = "=" * 80
 
-    num_critiques = None
+    old_num_critiques = None
     if args.drone:
         with open(args.drone, "rb") as fp:
             old_is_critiques = pickle.load(fp)["is_critiques"]
             assert old_is_critiques.shape[0] == args.num_users
             assert old_is_critiques.shape[1] <= args.max_iters
-            num_critiques = np.sum(old_is_critiques, axis=1)
+            old_num_critiques = np.sum(old_is_critiques, axis=1).astype(int)
 
     # Run the main loop
     all_losses, all_times, all_is_critiques = [], [], []
     for i in range(args.num_users):
         print("{}\nUSER {}/{}\n{}".format(SEP, i, args.num_users, SEP))
         problem = PROBLEMS[args.problem](args, rng)
-        num_iters, trace = METHODS[args.method](args, problem, rng)
+        num_critiques_for_user = None
+        if args.drone:
+            num_critiques_for_user = old_num_critiques[i]
+        num_iters, trace = METHODS[args.method](args, problem,
+                                                num_critiques_for_user, rng)
         losses, times, is_critiques = zip(*trace)
         all_losses.append(losses)
         all_times.append(times)

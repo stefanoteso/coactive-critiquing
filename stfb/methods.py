@@ -48,7 +48,7 @@ def is_separable(x, verbose=False):
 
 
 def pp(problem, max_iters, targets, Learner=Perceptron, can_critique=False,
-       rng=None, debug=False):
+       num_critiques=None, rng=None, debug=False):
     """The (Critiquing) Preference Perceptron [1]_.
 
     Contrary to the original algorithm:
@@ -71,6 +71,10 @@ def pp(problem, max_iters, targets, Learner=Perceptron, can_critique=False,
         possible features. The space may change when can_critique is True.
     can_critique : bool, defaults to False
         Whether critique queries are enabled.
+    num_critiques : int, defaults to None
+        How many critiques to ask the user for. Critiques are allocated
+        uniformly at random in the max_iter iterations. If None, the usual
+        query type selection heuristic is used.
     Learner : class, defaults to Perceptron
         The learner to be used.
     rng : int or None
@@ -112,6 +116,11 @@ def pp(problem, max_iters, targets, Learner=Perceptron, can_critique=False,
             {}
             """).format(problem.w_star, problem.x_star,
                         problem.phi(problem.x_star, "all")))
+
+    critique_iters = set()
+    if num_critiques is not None:
+        critique_iters = set(rng.permutation(max_iters)[:num_critiques])
+
     s = 0.0
     alpha = 50.0
     last_critique = True
@@ -128,17 +137,17 @@ def pp(problem, max_iters, targets, Learner=Perceptron, can_critique=False,
         is_satisfied = (x == x_bar).all()
         d = delta((x_bar, x), targets)
 
-        if can_critique and len(dataset) > 0 and \
-           not is_separable(np.vstack((deltas, d))):
+        p, ask_critique, last_critique = 0.0, False, False
+        if not can_critique:
+            pass
+        elif it in critique_iters:
+            p, ask_critique, last_critique = 1.0, True, True
+        elif len(dataset) > 0 and not is_separable(np.vstack((deltas, d))):
             if not last_critique:
                 s += 1
             p = (alpha * s) / (alpha * s  + (it + 1))
             ask_critique = rng.binomial(1, p)
             last_critique = bool(ask_critique)
-        else:
-            p = 0.0
-            ask_critique = False
-            last_critique = True
         t1 = time() - t1
 
         rho = None
