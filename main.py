@@ -43,11 +43,12 @@ METHODS = {
                     Learner=LEARNERS[args.update], rng=rng, debug=args.debug),
 }
 
-def _get_experiment_name(args):
-    return "_".join(map(str, [
-        args.problem, args.method, args.num_users, args.max_iters,
-        args.drone is not None, args.noise, args.sparsity, args.update,
-        args.seed]))
+def _get_experiment_path(args, method=None):
+    method = args.method if method is None else method
+    name = "_".join(map(str, [
+        args.problem, method, args.num_users, args.max_iters,
+        args.noise, args.sparsity, args.update, args.seed]))
+    return "results_" + name + ".pickle"
 
 def _to_matrix(l, rows=None, cols=None):
     if rows is None:
@@ -78,8 +79,6 @@ def main():
                         help="percentage of non-zero weights")
     parser.add_argument("-E", "--noise", type=float, default=0.1,
                         help="amplitude of noise for improvement query")
-    parser.add_argument("-D", "--drone", type=str, default=None,
-                        help="path to pickle to read # of critique queries from")
     parser.add_argument("-s", "--seed", type=int, default=0,
                         help="RNG seed")
     parser.add_argument("-d", "--debug", action="store_true",
@@ -95,13 +94,12 @@ def main():
 
     old_num_critiques = None
     if args.method == "drone-cpp":
-        if args.drone is None:
-            raise ValueError("drone-cpp requires a drone path")
-        with open(args.drone, "rb") as fp:
+        drone_path = _get_experiment_path(args, method="cpp")
+        with open(drone_path, "rb") as fp:
             old_is_critiques = pickle.load(fp)["is_critiques"]
-            assert old_is_critiques.shape[0] == args.num_users
-            assert old_is_critiques.shape[1] <= args.max_iters
-            old_num_critiques = np.sum(old_is_critiques, axis=1).astype(int)
+        assert old_is_critiques.shape[0] == args.num_users
+        assert old_is_critiques.shape[1] <= args.max_iters
+        old_num_critiques = np.sum(old_is_critiques, axis=1).astype(int)
 
     # Run the main loop
     all_losses, all_times, all_is_critiques = [], [], []
@@ -120,14 +118,13 @@ def main():
         print("\n" * 5)
 
     # Dump the results on disk
-    name = _get_experiment_name(args)
     data = {
         "experiment_args": args,
         "loss_matrix": _to_matrix(all_losses),
         "time_matrix": _to_matrix(all_times),
         "is_critiques": _to_matrix(all_is_critiques),
     }
-    with open("results_" + name + ".pickle", "wb") as fp:
+    with open(_get_experiment_path(args), "wb") as fp:
         pickle.dump(data, fp)
 
 if __name__ == "__main__":
