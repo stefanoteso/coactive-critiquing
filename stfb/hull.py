@@ -78,11 +78,16 @@ def _hard_check(x, verbose=False):
     return w.value is not None
 
 
-def get_prob_critique(x, p):
+s = 0.0
+def get_prob_critique(x, p, last_sep):
+    global s
     if len(x) <= 1:
+        s = 0.0
         return 0.0
     if _hard_check(np.vstack((x, p))):
         return 0.0
-    return expit(convex_hull_distance(x, -p))
+    if not last_sep:
+        s += 1
+    return s / (s + 1)
 
 
