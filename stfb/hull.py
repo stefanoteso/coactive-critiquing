@@ -79,7 +79,7 @@ def _hard_check(x, verbose=False):
 
 
 def is_separable(x, p):
-    if len(x) == 0 or _hard_check(np.vstack((x, -p))):
+    if len(x) <= 1 or _hard_check(np.vstack((x, -p))):
         return 1.0
     dist = convex_hull_distance(x, p)
     return expit(-dist)
