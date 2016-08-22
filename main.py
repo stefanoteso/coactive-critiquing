@@ -21,7 +21,6 @@ PROBLEMS = {
 
 LEARNERS = {
     "perceptron": stfb.Perceptron,
-    "exp-perceptron": stfb.ExpPerceptron,
 }
 
 METHODS = {

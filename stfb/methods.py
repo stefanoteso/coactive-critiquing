@@ -28,32 +28,6 @@ class Perceptron(object):
     def update(self, delta):
         self.w += delta
 
-class ExpPerceptron(object):
-    """Implementation of the sparse (exponentiated) perceptron [KW97]_.
-
-    References
-    ----------
-    .. [KW97] Kivinen and Warmuth, *Exponentiated Gradient Versus Gradient
-        Descent for Linear Predictors*, 1997, Information and Computation
-    """
-    def __init__(self, problem, features, **kwargs):
-        max_iters = kwargs.pop("max_iters", 100)
-        debug = kwargs.pop("debug", False)
-
-        targets = problem.enumerate_features(features)
-
-        self.w = np.zeros(problem.num_features, dtype=np.float32)
-        self.w[targets] = np.ones(len(targets)) / len(targets)
-        self.eta = 1 / (2 * problem.get_feature_radius() * np.sqrt(max_iters))
-
-    def default_weight(self, num_targets):
-        return 1 / num_targets
-
-    def update(self, delta):
-        v = self.w * np.exp(self.eta * delta)
-        assert (v >= 0).all()
-        self.w = v / np.sum(v)
-
 
 def is_separable(x, verbose=False):
     """Checks whether a dataset is separable using hard SVM."""
