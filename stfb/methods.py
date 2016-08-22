@@ -134,7 +134,8 @@ def pp(problem, max_iters, targets, Learner=Perceptron, can_critique=False,
         is_satisfied = (x == x_bar).all()
 
         d = delta((x_bar, x))
-        separable = is_separable(np.array(delta(dataset)), d) >= th
+        separable = can_critique and \
+                    (is_separable(np.array(delta(dataset)), d) >= th)
         t1 = time() - t1
 
         rho = None
