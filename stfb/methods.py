@@ -120,7 +120,7 @@ def pp(problem, max_iters, targets, Learner=Perceptron, can_critique=False,
             {}
             """).format(problem.w_star, problem.x_star,
                         problem.phi(problem.x_star, "all")))
-    th = 0.5
+
     trace, dataset = [], []
     for it in range(max_iters):
         t0 = time()
