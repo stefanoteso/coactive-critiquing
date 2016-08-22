@@ -42,8 +42,7 @@ METHODS = {
 def _get_experiment_name(args):
     return "_".join(map(str, [
         args.problem, args.method, args.num_users, args.max_iters,
-        args.noise, args.sparsity, args.num_attributes, args.update,
-        args.seed]))
+        args.noise, args.sparsity, args.update, args.seed]))
 
 def _to_matrix(l, rows=None, cols=None):
     if rows is None:
@@ -74,8 +73,6 @@ def main():
                         help="percentage of non-zero weights")
     parser.add_argument("-E", "--noise", type=float, default=0.1,
                         help="amplitude of noise for improvement query")
-    parser.add_argument("-n", "--num-attributes", type=int, default=10,
-                        help="number of attributes, for problems that support it")
     parser.add_argument("-s", "--seed", type=int, default=0,
                         help="RNG seed")
     parser.add_argument("-d", "--debug", action="store_true",
