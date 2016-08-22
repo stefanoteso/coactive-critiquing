@@ -9,6 +9,7 @@ _METHOD_TO_COLORS = {
     "pp-attr":  ("#204A87", "#3465A4"), # blue
     "pp-all":   ("#A40000", "#CC0000"), # red
     "cpp":      ("#4E9A06", "#73D216"), # green
+    "drone-cpp":("#222222", "#000000"), # black
 }
 
 def _get_ticks(x):
