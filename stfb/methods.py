@@ -4,24 +4,7 @@ import numpy as np
 import cvxpy as cvx
 from textwrap import dedent
 from time import time
-from stfb.hull import get_prob_critique
-
-
-def _hard_check(x, verbose=False):
-    """Checks whether a dataset is separable using hard SVM."""
-    n, d = x.shape
-    if n < 2:
-        return True
-
-    w = cvx.Variable(d)
-
-    norm_w = cvx.norm(w, 2)
-    constraints = [cvx.sum_entries(x[i] * w) >= 1 for i in range(n)]
-
-    problem = cvx.Problem(cvx.Minimize(norm_w), constraints)
-    problem.solve(verbose=verbose)
-    return w.value is not None
-
+from stfb.hull import get_prob_critique, is_separable
 
 # TODO the 'perturbed' pp algorithm is preferred for noisy users.
 
@@ -153,8 +136,9 @@ def pp(problem, max_iters, targets, Learner=Perceptron, can_critique=False,
         t1 = time()
         is_satisfied = (x == x_bar).all()
         d = delta((x_bar, x))
-        if can_critique and len(dataset) > 1 and \
-                not _hard_check(np.vstack((delta(dataset), d))):
+
+        if can_critique and len(dataset) > 0 and \
+           not is_separable(np.vstack((delta(dataset), d))):
             if not last_critique:
                 s += 1
             p = (alpha * s) / (alpha * s  + (it + 1))
@@ -162,6 +146,7 @@ def pp(problem, max_iters, targets, Learner=Perceptron, can_critique=False,
             last_critique = bool(ask_critique)
         else:
             d = None
+            p = 0.0
             ask_critique = False
             last_critique = True
         t1 = time() - t1
