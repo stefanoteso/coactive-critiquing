@@ -2,6 +2,7 @@
 
 import numpy as np
 import cvxpy as cvx
+from sklearn.utils import check_random_state
 from textwrap import dedent
 from time import time
 
@@ -10,20 +11,21 @@ from time import time
 class Perceptron(object):
     """Implementation of the standard perceptron."""
     def __init__(self, problem, features, **kwargs):
-        debug = kwargs.pop("debug", False)
+        self._debug = kwargs.pop("debug", False)
+        self._rng = check_random_state(kwargs.pop("rng", None))
 
         targets = problem.enumerate_features(features)
 
-        # TODO sample form a standard normal if debug is False
-        # XXX for sparse users perhaps sample from a sparse distribution
         self.w = np.zeros(problem.num_features, dtype=np.float32)
-        self.w[targets] = np.ones(len(targets))
-
-        self._debug = debug
+        if self._debug:
+            self.w[targets] = np.ones(len(targets))
+        else:
+            # XXX for sparse users perhaps sample from a sparse distribution
+            self.w[targets] = \
+                rng.normal(0, 1, size=len(targets)).astype(np.float32)
 
     def default_weight(self, num_targets):
-        # TODO sample from a standard normal if debug is False
-        return 0.0
+        return 1.0 if self._debug else self._rng.normal(0, 1)
 
     def update(self, delta):
         self.w += delta
