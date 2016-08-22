@@ -60,7 +60,7 @@ def convex_hull_distance(x, p):
     return min([euclidean(vertex, p) for vertex in vertices])
 
 
-def _hard_check(x, verbose=False, rng=None):
+def _hard_check(x, verbose=False):
     """Checks whether a dataset is separable using hard SVM."""
     n, d = x.shape
     if n < 2:
@@ -76,8 +76,8 @@ def _hard_check(x, verbose=False, rng=None):
     return w.value is not None
 
 
-def is_separable(x, p, rng=None):
-    if len(x) == 0 or _hard_check(np.vstack((x, p)), rng=rng):
+def is_separable(x, p):
+    if len(x) == 0 or _hard_check(np.vstack((x, p))):
         return 1.0
     dist = convex_hull_distance(x, p)
     return expit(-dist)
