@@ -35,6 +35,10 @@ METHODS = {
     "cpp":
         lambda args, problem, num_critiques, rng:
             stfb.pp(problem, args.max_iters, "attributes", can_critique=True,
+                    Learner=LEARNERS[args.update], rng=rng, debug=args.debug),
+    "drone-cpp":
+        lambda args, problem, num_critiques, rng:
+            stfb.pp(problem, args.max_iters, "attributes", can_critique=True,
                     num_critiques=num_critiques,
                     Learner=LEARNERS[args.update], rng=rng, debug=args.debug),
 }
@@ -90,7 +94,9 @@ def main():
     SEP = "=" * 80
 
     old_num_critiques = None
-    if args.drone:
+    if args.method == "drone-cpp":
+        if args.drone is None:
+            raise ValueError("drone-cpp requires a drone path")
         with open(args.drone, "rb") as fp:
             old_is_critiques = pickle.load(fp)["is_critiques"]
             assert old_is_critiques.shape[0] == args.num_users
@@ -103,7 +109,7 @@ def main():
         print("{}\nUSER {}/{}\n{}".format(SEP, i, args.num_users, SEP))
         problem = PROBLEMS[args.problem](args, rng)
         num_critiques_for_user = None
-        if args.drone:
+        if args.method == "drone-cpp":
             num_critiques_for_user = old_num_critiques[i]
         num_iters, trace = METHODS[args.method](args, problem,
                                                 num_critiques_for_user, rng)
