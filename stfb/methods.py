@@ -4,7 +4,7 @@ import numpy as np
 import cvxpy as cvx
 from textwrap import dedent
 from time import time
-from stfb.hull import is_separable
+from stfb.hull import get_prob_critique
 
 # TODO the 'perturbed' pp algorithm is preferred for noisy users.
 
@@ -121,7 +121,7 @@ def pp(problem, max_iters, targets, Learner=Perceptron, can_critique=False,
             """).format(problem.w_star, problem.x_star,
                         problem.phi(problem.x_star, "all")))
     th = 0.5
-    trace, dataset, deltas = [], [], []
+    trace, dataset = [], []
     for it in range(max_iters):
         t0 = time()
         x = problem.infer(learner.w, targets)
@@ -133,13 +133,17 @@ def pp(problem, max_iters, targets, Learner=Perceptron, can_critique=False,
         t1 = time()
         is_satisfied = (x == x_bar).all()
 
-        d = delta((x_bar, x))
-        separable = can_critique and \
-                    (is_separable(np.array(delta(dataset)), d) >= th)
+        if can_critique:
+            d = delta((x_bar, x))
+            p = get_prob_critique(np.array(delta(dataset)), d)
+            ask_critique = rng.binomial(1, p)
+        else:
+            d = None
+            ask_critique = False
         t1 = time() - t1
 
         rho = None
-        if can_critique and not is_satisfied and not separable:
+        if not is_satisfied and ask_critique:
             rho, _ = problem.query_critique(x, x_bar, targets)
             assert rho > 0
 
@@ -166,7 +170,7 @@ def pp(problem, max_iters, targets, Learner=Perceptron, can_critique=False,
 
                 phi(x_bar) - phi(x) =
                 {d}
-                separable = {separable}
+                ask_critique = {ask_critique}
 
                 rho = {rho}
 
