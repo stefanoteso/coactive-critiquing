@@ -27,27 +27,36 @@ METHODS = {
     "pp-attr":
         lambda args, problem, num_critiques, rng:
             stfb.pp(problem, args.max_iters, "attributes",
-                    Learner=LEARNERS[args.update], rng=rng, debug=args.debug),
+                    Learner=LEARNERS[args.update],
+                    perturbation=args.perturbation,
+                    rng=rng, debug=args.debug),
     "pp-all":
         lambda args, problem, num_critiques, rng:
             stfb.pp(problem, args.max_iters, "all",
-                    Learner=LEARNERS[args.update], rng=rng, debug=args.debug),
+                    Learner=LEARNERS[args.update],
+                    perturbation=args.perturbation,
+                    rng=rng, debug=args.debug),
     "cpp":
         lambda args, problem, num_critiques, rng:
             stfb.pp(problem, args.max_iters, "attributes", can_critique=True,
-                    Learner=LEARNERS[args.update], rng=rng, debug=args.debug),
+                    Learner=LEARNERS[args.update],
+                    perturbation=args.perturbation,
+                    rng=rng, debug=args.debug),
     "drone-cpp":
         lambda args, problem, num_critiques, rng:
             stfb.pp(problem, args.max_iters, "attributes", can_critique=True,
                     num_critiques=num_critiques,
-                    Learner=LEARNERS[args.update], rng=rng, debug=args.debug),
+                    Learner=LEARNERS[args.update],
+                    perturbation=args.perturbation,
+                    rng=rng, debug=args.debug),
 }
 
 def _get_experiment_path(args, method=None):
     method = args.method if method is None else method
     name = "_".join(map(str, [
         args.problem, method, args.num_users, args.max_iters,
-        args.noise, args.sparsity, args.update, args.seed]))
+        args.noise, args.sparsity, args.update, args.perturbation,
+        args.seed]))
     return "results_" + name + ".pickle"
 
 def _to_matrix(l, rows=None, cols=None):
@@ -73,12 +82,14 @@ def main():
                         help="number of users to average over")
     parser.add_argument("-T", "--max-iters", type=int, default=100,
                         help="maximum number of iterations")
-    parser.add_argument("-u", "--update", type=str, default="perceptron",
-                        help="pp update type")
     parser.add_argument("-S", "--sparsity", type=float, default=0.2,
                         help="percentage of non-zero weights")
     parser.add_argument("-E", "--noise", type=float, default=0.1,
                         help="amplitude of noise for improvement query")
+    parser.add_argument("-u", "--update", type=str, default="perceptron",
+                        help="pp update type")
+    parser.add_argument("-p", "--perturbation", type=float, default=0.0,
+                        help="amount of inference perturbation")
     parser.add_argument("-s", "--seed", type=int, default=0,
                         help="RNG seed")
     parser.add_argument("-d", "--debug", action="store_true",
