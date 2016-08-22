@@ -55,40 +55,6 @@ class ExpPerceptron(object):
         assert (v >= 0).all()
         self.w = v / np.sum(v)
 
-def _is_separable(deltas, verbose=False, rng=None):
-    """Checks whether a dataset is separable using hard SVM."""
-    n_examples = len(deltas)
-    if n_examples < 2:
-        return True
-    n_features = len(deltas[0])
-
-    w = cvx.Variable(n_features)
-
-    norm_w = cvx.norm(w, 2)
-    constraints = [cvx.sum_entries(deltas[i] * w) >= 1
-                   for i in range(n_examples)]
-
-    problem = cvx.Problem(cvx.Minimize(norm_w), constraints)
-    problem.solve(verbose=verbose)
-    return w.value is not None
-
-def _is_separable_soft(deltas, verbose=False, rng=None):
-    from sklearn import svm
-
-    n_examples = len(deltas)
-    if n_examples < 2:
-        return True
-
-    max_iter = 10 * n_examples**3
-
-    X = deltas[:-1] + [-deltas[-1]]
-    y = [1] * (n_examples - 1) + [-1]
-
-    model = svm.LinearSVC(C=1e6, max_iter=max_iter, random_state=rng)
-    model.fit(X, y)
-
-    return model.n_iter_ < max_iter
-
 def pp(problem, max_iters, targets, Learner=Perceptron, can_critique=False,
        rng=None, debug=False):
     """The (Critiquing) Preference Perceptron [1]_.
