@@ -4,7 +4,6 @@ import numpy as np
 import cvxpy as cvx
 from textwrap import dedent
 from time import time
-from stfb.hull import get_prob_critique, is_separable
 
 # TODO the 'perturbed' pp algorithm is preferred for noisy users.
 
@@ -54,6 +53,23 @@ class ExpPerceptron(object):
         v = self.w * np.exp(self.eta * delta)
         assert (v >= 0).all()
         self.w = v / np.sum(v)
+
+
+def is_separable(x, verbose=False):
+    """Checks whether a dataset is separable using hard SVM."""
+    n, d = x.shape
+    if n < 2:
+        return True
+
+    w = cvx.Variable(d)
+
+    norm_w = cvx.norm(w, 2)
+    constraints = [cvx.sum_entries(x[i] * w) >= 1 for i in range(n)]
+
+    problem = cvx.Problem(cvx.Minimize(norm_w), constraints)
+    problem.solve(verbose=verbose)
+    return w.value is not None
+
 
 def pp(problem, max_iters, targets, Learner=Perceptron, can_critique=False,
        rng=None, debug=False):
@@ -120,7 +136,6 @@ def pp(problem, max_iters, targets, Learner=Perceptron, can_critique=False,
             {}
             """).format(problem.w_star, problem.x_star,
                         problem.phi(problem.x_star, "all")))
-    p = 0.0
     s = 0.0
     alpha = 50.0
     last_critique = True
