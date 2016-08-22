@@ -139,7 +139,7 @@ class Problem(object):
         assert x.shape == (self.num_attributes,)
 
         assignments = minizinc(template_path, data=data, output_vars=["phi"],
-                               keep=True)
+                               serialize=True, keep=True)
 
         phi = self.assignment_to_array(assignments[0]["phi"])
         mask = np.ones_like(phi, dtype=bool)
@@ -175,7 +175,7 @@ class Problem(object):
 
         assignments = minizinc(template_path, data=data,
                                output_vars=["x", "objective"],
-                               keep=True)
+                               serialize=True, keep=True)
 
         return self.assignment_to_array(assignments[0]["x"])
 
@@ -214,7 +214,7 @@ class Problem(object):
 
         assignments = minizinc(template_path, data=data,
                                output_vars=["x", "objective"],
-                               keep=True)
+                               serialize=True, keep=True)
 
         x_bar = self.assignment_to_array(assignments[0]["x"])
         assert (x != x_bar).any(), (x, x_bar)
