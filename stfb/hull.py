@@ -38,7 +38,7 @@ def convex_hull_vertices(x):
         rd = min([n - 1, r])
         pca = PCA(n_components=rd).fit(x)
         proj_x = pca.transform(x)
-        ch = ConvexHull(proj_x, qhull_options="QJ QbB Pp")
+        ch = ConvexHull(proj_x, qhull_options="QJ QbB")
     return [x[i] for i in ch.vertices]
 
 
