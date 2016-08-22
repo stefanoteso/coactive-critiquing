@@ -31,13 +31,15 @@ class Perceptron(object):
         self.w += delta
 
 
-def is_separable(x, verbose=False):
+def is_separable(deltas, d, verbose=False):
     """Checks whether a dataset is separable using hard SVM."""
-    n, d = x.shape
-    if n < 2:
+    if len(deltas) <= 1:
         return True
 
-    w = cvx.Variable(d)
+    x = np.vstack((deltas, d))
+    n, k = x.shape
+
+    w = cvx.Variable(k)
 
     norm_w = cvx.norm(w, 2)
     constraints = [cvx.sum_entries(x[i] * w) >= 1 for i in range(n)]
@@ -143,7 +145,7 @@ def pp(problem, max_iters, targets, Learner=Perceptron, can_critique=False,
             pass
         elif it in critique_iters:
             p, ask_critique = 1.0, True
-        elif len(dataset) > 0 and not is_separable(np.vstack((deltas, d))):
+        elif not is_separable(deltas, d):
             if not ask_critique:
                 s += 1
             p = (alpha * s) / (alpha * s  + (it + 1))
