@@ -101,7 +101,7 @@ def pp(problem, max_iters, targets, Learner=Perceptron, can_critique=False,
 
     targets = problem.enumerate_features(targets)
 
-    def delta(xs):
+    def delta(xs, targets):
         if isinstance(xs, tuple):
             return problem.phi(xs[0], targets) - problem.phi(xs[1], targets)
         return [problem.phi(x_bar, targets) - problem.phi(x, targets)
@@ -124,7 +124,7 @@ def pp(problem, max_iters, targets, Learner=Perceptron, can_critique=False,
     s = 0.0
     alpha = 50.0
     last_critique = True
-    trace, dataset = [], []
+    trace, dataset, deltas = [], [], []
     for it in range(max_iters):
         t0 = time()
         x = problem.infer(learner.w, targets)
@@ -135,17 +135,16 @@ def pp(problem, max_iters, targets, Learner=Perceptron, can_critique=False,
 
         t1 = time()
         is_satisfied = (x == x_bar).all()
-        d = delta((x_bar, x))
+        d = delta((x_bar, x), targets)
 
         if can_critique and len(dataset) > 0 and \
-           not is_separable(np.vstack((delta(dataset), d))):
+           not is_separable(np.vstack((deltas, d))):
             if not last_critique:
                 s += 1
             p = (alpha * s) / (alpha * s  + (it + 1))
             ask_critique = rng.binomial(1, p)
             last_critique = bool(ask_critique)
         else:
-            d = None
             p = 0.0
             ask_critique = False
             last_critique = True
@@ -181,7 +180,7 @@ def pp(problem, max_iters, targets, Learner=Perceptron, can_critique=False,
                 {d}
                 ask_critique = {ask_critique}
                 p = {p}
-                
+
                 rho = {rho}
 
                 is_satisfied = {is_satisfied}
@@ -189,13 +188,15 @@ def pp(problem, max_iters, targets, Learner=Perceptron, can_critique=False,
 
         t2 = time()
         if not is_satisfied:
+            dataset.append((x_bar, x))
             if rho is not None:
                 targets.append(rho)
                 learner.w[rho] = learner.default_weight(len(targets))
-            learner.update(delta((x_bar, x)))
-            dataset.append((x_bar, x))
+                deltas = delta(dataset, targets)
+            else:
+                deltas.append(d)
+            learner.update(d)
         t2 = time() - t2
-
 
         if debug:
             w = learner.w
