@@ -138,7 +138,7 @@ def pp(problem, max_iters, targets, Learner=Perceptron, can_critique=False,
         t1 = time() - t1
 
         rho = None
-        if can_critique and not is_satisfied and not is_separable:
+        if can_critique and not is_satisfied and not separable:
             rho, _ = problem.query_critique(x, x_bar, targets)
             assert rho > 0
 
