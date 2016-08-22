@@ -73,6 +73,8 @@ def main():
                         help="percentage of non-zero weights")
     parser.add_argument("-E", "--noise", type=float, default=0.1,
                         help="amplitude of noise for improvement query")
+    parser.add_argument("-D", "--drone", type=str, default=None,
+                        help="path to pickle to read # of critique queries from")
     parser.add_argument("-s", "--seed", type=int, default=0,
                         help="RNG seed")
     parser.add_argument("-d", "--debug", action="store_true",
@@ -85,6 +87,14 @@ def main():
     pymzn.debug(args.verbose)
 
     SEP = "=" * 80
+
+    num_critiques = None
+    if args.drone:
+        with open(args.drone, "rb") as fp:
+            old_is_critiques = pickle.load(fp)["is_critiques"]
+            assert old_is_critiques.shape[0] == args.num_users
+            assert old_is_critiques.shape[1] <= args.max_iters
+            num_critiques = np.sum(old_is_critiques, axis=1)
 
     # Run the main loop
     all_losses, all_times, all_is_critiques = [], [], []
