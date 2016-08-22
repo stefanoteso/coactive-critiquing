@@ -6,8 +6,6 @@ from sklearn.utils import check_random_state
 from textwrap import dedent
 from time import time
 
-# TODO the 'perturbed' pp algorithm is preferred for noisy users.
-
 class Perceptron(object):
     """Implementation of the standard perceptron."""
     def __init__(self, problem, features, **kwargs):
@@ -53,10 +51,8 @@ def pp(problem, max_iters, targets, Learner=Perceptron, can_critique=False,
        num_critiques=None, rng=None, debug=False):
     """The (Critiquing) Preference Perceptron [1]_.
 
-    Contrary to the original algorithm:
-    - There is no support for the "context" part.
-    - The weight vector is initialized to (n**-2, ..., n**-2) rather than 0,
-      to avoid having to solve inference with w == 0 (which is ambiguous).
+    Contrary to the original algorithm, there is no support for the "context"
+    part.
 
     Termination occurs when (i) the user does not modify the proposal, or (ii)
     the maximum number of iterations is reached.
