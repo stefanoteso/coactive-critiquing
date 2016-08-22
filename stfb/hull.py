@@ -38,6 +38,8 @@ def convex_hull_vertices(x):
         rd = min([n - 1, r])
         pca = PCA(n_components=rd).fit(x)
         proj_x = pca.transform(x)
+        if r <= 1:
+            return [x[np.argmin(proj_x)], x[np.argmax(proj_x)]]
         ch = ConvexHull(proj_x, qhull_options="QJ QbB")
     return [x[i] for i in ch.vertices]
 
@@ -77,7 +79,7 @@ def _hard_check(x, verbose=False):
 
 
 def is_separable(x, p):
-    if len(x) == 0 or _hard_check(np.vstack((x, p))):
+    if len(x) == 0 or _hard_check(np.vstack((x, -p))):
         return 1.0
     dist = convex_hull_distance(x, p)
     return expit(-dist)
