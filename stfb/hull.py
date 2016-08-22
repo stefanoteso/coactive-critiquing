@@ -81,7 +81,7 @@ def _hard_check(x, verbose=False):
 def get_prob_critique(x, p):
     if len(x) <= 1:
         return 0.0
-    if _hard_check(np.vstack((x, -p))):
+    if _hard_check(np.vstack((x, p))):
         return 0.0
     return expit(convex_hull_distance(x, -p))
 
