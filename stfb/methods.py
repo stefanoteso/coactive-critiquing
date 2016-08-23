@@ -139,7 +139,11 @@ def pp(problem, max_iters, targets, Learner=Perceptron, can_critique=False,
         x_bar = problem.query_improvement(x, "all")
 
         t1 = time()
-        is_satisfied = (x == x_bar).all()
+        if x_bar == "satisfied":
+            trace.append((loss, t0, False))
+            print("user is satisfied!")
+            break
+
         d = delta((x_bar, x), targets)
 
         p, ask_critique = 0.0, False
@@ -155,7 +159,7 @@ def pp(problem, max_iters, targets, Learner=Perceptron, can_critique=False,
         t1 = time() - t1
 
         rho = None
-        if not is_satisfied and ask_critique:
+        if ask_critique:
             rho, _ = problem.query_critique(x, x_bar, targets)
             assert rho > 0
 
@@ -186,20 +190,17 @@ def pp(problem, max_iters, targets, Learner=Perceptron, can_critique=False,
                 p = {p}
 
                 rho = {rho}
-
-                is_satisfied = {is_satisfied}
                 """).format(**locals()))
 
         t2 = time()
-        if not is_satisfied:
-            dataset.append((x_bar, x))
-            if rho is not None:
-                targets.append(rho)
-                learner.w[rho] = learner.default_weight(len(targets))
-                deltas = delta(dataset, targets)
-            else:
-                deltas.append(d)
-            learner.update(d)
+        dataset.append((x_bar, x))
+        if rho is not None:
+            targets.append(rho)
+            learner.w[rho] = learner.default_weight(len(targets))
+            deltas = delta(dataset, targets)
+        else:
+            deltas.append(d)
+        learner.update(d)
         t2 = time() - t2
 
         if debug:
@@ -215,12 +216,6 @@ def pp(problem, max_iters, targets, Learner=Perceptron, can_critique=False,
 
         is_critique = rho is not None
         trace.append((loss, t0 + t1, is_critique))
-        if is_satisfied:
-            if loss > 0:
-                print("user is not satisfied, but can not improve item!")
-            else:
-                print("user is satisfied!")
-            break
     else:
         print("user not satisfied, iterations elapsed")
 

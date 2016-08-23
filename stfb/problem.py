@@ -1,7 +1,7 @@
 # -*- encoding: utf-8 -*-
 
 import numpy as np
-from pymzn import minizinc
+from pymzn import minizinc, MiniZincUnsatisfiableError
 from itertools import combinations
 from sklearn.utils import check_random_state
 from textwrap import dedent
@@ -207,14 +207,19 @@ class Problem(object):
 
         if self.utility_loss(x, "all") == 0:
             # XXX this is noiseless
-            return x
+            return "satisfied"
 
         targets = self.enumerate_features(features)
         assert (w_star[targets] != 0).any()
 
-        assignments = minizinc(template_path, data=data,
-                               output_vars=["x", "objective"],
-                               keep=True)
+        try:
+            assignments = minizinc(template_path, data=data,
+                                   output_vars=["x", "objective"],
+                                   keep=True)
+        except MiniZincUnsatisfiableError:
+            # this happens when there is no better configuration for the noisy
+            # weight vector
+            return x
 
         x_bar = self.assignment_to_array(assignments[0]["x"])
         assert (x != x_bar).any(), (x, x_bar)
