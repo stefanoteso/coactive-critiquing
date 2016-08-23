@@ -11,6 +11,7 @@ _RAM_DESKTOPS = {2, 5, 8, 9};
 _RAM_TOWERS = {5, 8, 9, 10};
 
 _TEMPLATE = """\
+include "globals.mzn";
 int: N_TYPES = 3;
 set of int: TYPES = 1..N_TYPES;
 
@@ -130,7 +131,7 @@ set of int: FEATURES = 1..N_FEATURES;
 set of int: TRUTH_VALUES;
 set of int: ACTIVE_FEATURES;
 
-array[FEATURES] of int: W;
+array[FEATURES] of float: W;
 array[FEATURES] of var TRUTH_VALUES: phi;
 array[FEATURES] of var TRUTH_VALUES: INPUT_PHI;
 
@@ -152,8 +153,8 @@ array[1..6] of int: INPUT_X;
 _PHI = "solve satisfy;"
 
 _INFER = """\
-var int: objective =
-    sum(j in ACTIVE_FEATURES)(W[j] * phi[j]);
+float: max_ws = sum([abs(W[i]) | i in ACTIVE_FEATURES]);
+var -max_ws..max_ws: objective = sum(i in ACTIVE_FEATURES)(W[i] * phi[i]);
 
 solve maximize objective;
 """
@@ -163,8 +164,7 @@ var int: objective =
     sum(i in 1..6)(x[i] != INPUT_X[i]);
 
 constraint
-    sum(j in ACTIVE_FEATURES)(W[j] * phi[j]) >
-        sum(j in ACTIVE_FEATURES)(W[j] * INPUT_PHI[j]);
+    sum(j in ACTIVE_FEATURES)(W[j] * (phi[j] - INPUT_PHI[j])) > 0;
 
 constraint objective >= 1;
 
@@ -250,7 +250,7 @@ class PCProblem(Problem):
             "RAM_TOWERS": _RAM_TOWERS,
             "N_FEATURES": self.num_features,
             "ACTIVE_FEATURES": set([1]), # doesn't matter
-            "W": [0] * self.num_features, # doesn't matter
+            "W": [0.0] * self.num_features, # doesn't matter
             "x_type": int(x[0]),
             "x_manufacturer": int(x[1]),
             "x_cpu": int(x[2]),
@@ -276,7 +276,7 @@ class PCProblem(Problem):
             "RAM_TOWERS": _RAM_TOWERS,
             "N_FEATURES": self.num_features,
             "ACTIVE_FEATURES": {j + 1 for j in targets},
-            "W": self.array_to_assignment(w, int),
+            "W": self.array_to_assignment(w, float),
             "INPUT_X": [1] * self.num_attributes, # doesn't matter
             "INPUT_PHI": [1] * self.num_features, # doesn't matter
         }
@@ -286,7 +286,8 @@ class PCProblem(Problem):
     def query_improvement(self, x, features):
         w_star = np.array(self.w_star)
         if self.noise:
-            raise NotImplementedError()
+            nnz = w_star.nonzero()[0]
+            w_star[nnz] += self.rng.normal(0, self.noise, size=len(nnz)).astype(np.float32)
 
         PATH = "pc-improve.mzn"
 
@@ -301,7 +302,7 @@ class PCProblem(Problem):
             "RAM_TOWERS": _RAM_TOWERS,
             "N_FEATURES": self.num_features,
             "ACTIVE_FEATURES": {j + 1 for j in targets},
-            "W": self.array_to_assignment(w_star, int),
+            "W": self.array_to_assignment(w_star, float),
             "INPUT_X": self.array_to_assignment(x, int),
             "INPUT_PHI": self.array_to_assignment(phi, int),
         }
