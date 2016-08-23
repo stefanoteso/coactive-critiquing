@@ -255,7 +255,6 @@ class Problem(object):
         """
         assert x.shape == (self.num_attributes,)
         assert x_bar.shape == (self.num_attributes,)
-        assert (x != x_bar).any()
 
         targets = self.enumerate_features(features)
         assert len(targets) < self.num_features, \
