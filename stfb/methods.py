@@ -127,6 +127,7 @@ def pp(problem, max_iters, targets, Learner=Perceptron, can_critique=False,
     s = 0.0
     ask_critique = True
     trace, dataset, deltas = [], [], []
+    num_real_improvements = 0
     for it in range(max_iters):
         t0 = time()
         w = np.array(learner.w)
@@ -143,6 +144,12 @@ def pp(problem, max_iters, targets, Learner=Perceptron, can_critique=False,
             trace.append((loss, t0, False))
             print("user is satisfied!")
             break
+
+        u = problem.utility(x, "all")
+        u_bar = problem.utility(x_bar, "all")
+        is_improvement = u_bar > u
+        if is_improvement:
+            num_real_improvements += 1
 
         d = delta((x_bar, x), targets)
 
@@ -167,6 +174,7 @@ def pp(problem, max_iters, targets, Learner=Perceptron, can_critique=False,
             w = learner.w
             phi = problem.phi(x, "all")
             phi_bar = problem.phi(x_bar, "all")
+            perc_real_improvements = num_real_improvements / (it + 1)
             print(dedent("""\
                 == ITERATION {it:3d} ==
 
@@ -183,6 +191,9 @@ def pp(problem, max_iters, targets, Learner=Perceptron, can_critique=False,
                 {x_bar}
                 phi(x_bar) =
                 {phi_bar}
+
+                is_improvement = {is_improvement}
+                % real improvements = {perc_real_improvements}
 
                 phi(x_bar) - phi(x) =
                 {d}
