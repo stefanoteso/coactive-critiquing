@@ -262,6 +262,7 @@ class Problem(object):
             "requested critique in full feature space"
 
         scores = self.w_star * (self.phi(x_bar, "all") - self.phi(x, "all"))
+        scores = scores.astype(np.float32)
 
         if self.noise == 0:
             scores[targets] = np.nan
