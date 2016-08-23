@@ -270,7 +270,9 @@ class Problem(object):
         else:
             scores[targets] = 0
             if (scores != 0).any():
-                pvals = scores / np.sum(scores)
+                scores += np.abs(np.min(scores))
+                scores[targets] = 0
+                pvals = scores / (np.sum(scores) + 1e-3)
                 rho = np.nonzero(self.rng.multinomial(1, pvals))[0][0]
             else:
                 # this can happen when x_bar is better than x only for features
