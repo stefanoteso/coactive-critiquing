@@ -98,7 +98,6 @@ def main():
                         help="let PyMzn be verbose")
     args = parser.parse_args()
 
-    rng = np.random.RandomState(args.seed)
     pymzn.debug(args.verbose)
 
     SEP = "=" * 80
@@ -116,6 +115,7 @@ def main():
     all_losses, all_times, all_is_critiques = [], [], []
     for i in range(args.num_users):
         print("{}\nUSER {}/{}\n{}".format(SEP, i, args.num_users, SEP))
+        rng = np.random.RandomState(args.seed + i)
         problem = PROBLEMS[args.problem](args, rng)
         num_critiques_for_user = None
         if args.method == "drone-cpp":
