@@ -48,7 +48,7 @@ def is_separable(deltas, d, verbose=False):
 
 
 def pp(problem, max_iters, targets, Learner=Perceptron, can_critique=False,
-       num_critiques=None, perturbation=0, rng=None, debug=False):
+       num_critiques=None, perturbation=0, rng=None, debug=False, gamma=1.0):
     """The (Critiquing) Preference Perceptron [1]_.
 
     Contrary to the original algorithm, there is no support for the "context"
@@ -122,8 +122,6 @@ def pp(problem, max_iters, targets, Learner=Perceptron, can_critique=False,
     if num_critiques is not None:
         critique_iters = set(rng.permutation(max_iters)[:num_critiques])
 
-    alpha = 50.0
-
     s = 0.0
     ask_critique = True
     trace, dataset, deltas = [], [], []
@@ -161,7 +159,7 @@ def pp(problem, max_iters, targets, Learner=Perceptron, can_critique=False,
         elif not is_separable(deltas, d):
             if not ask_critique:
                 s += 1
-            p = 1.0 # (alpha * s) / (alpha * s  + (it + 1))
+            p = 1.0 # (gamma * s) / (gamma * s  + (it + 1))
             ask_critique = bool(rng.binomial(1, p))
         t1 = time() - t1
 
