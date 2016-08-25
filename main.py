@@ -30,26 +30,26 @@ METHODS = {
             stfb.pp(problem, args.max_iters, "attributes",
                     Learner=LEARNERS[args.update],
                     perturbation=args.perturbation,
-                    rng=rng, debug=args.debug),
+                    rng=rng, debug=args.debug, gamma=args.gamma),
     "pp-all":
         lambda args, problem, num_critiques, rng:
             stfb.pp(problem, args.max_iters, "all",
                     Learner=LEARNERS[args.update],
                     perturbation=args.perturbation,
-                    rng=rng, debug=args.debug),
+                    rng=rng, debug=args.debug, gamma=args.gamma),
     "cpp":
         lambda args, problem, num_critiques, rng:
             stfb.pp(problem, args.max_iters, "attributes", can_critique=True,
                     Learner=LEARNERS[args.update],
                     perturbation=args.perturbation,
-                    rng=rng, debug=args.debug),
+                    rng=rng, debug=args.debug, gamma=args.gamma),
     "drone-cpp":
         lambda args, problem, num_critiques, rng:
             stfb.pp(problem, args.max_iters, "attributes", can_critique=True,
                     num_critiques=num_critiques,
                     Learner=LEARNERS[args.update],
                     perturbation=args.perturbation,
-                    rng=rng, debug=args.debug),
+                    rng=rng, debug=args.debug, gamma=args.gamma),
 }
 
 def _get_experiment_path(args, method=None):
@@ -91,14 +91,17 @@ def main():
                         help="pp update type")
     parser.add_argument("-p", "--perturbation", type=float, default=0.0,
                         help="amount of inference perturbation")
+    parser.add_argument("-g", "--gamma", type=float, default=1.0,
+                        help="coefficient for probabilistic query critique "
+                             "selection")
+    parser.add_argument("-W", "--weights", type=str, default=None,
+                        help="path to pickle file with user weights")
     parser.add_argument("-s", "--seed", type=int, default=0,
                         help="RNG seed")
     parser.add_argument("-d", "--debug", action="store_true",
                         help="let structured feedback be verbose")
     parser.add_argument("-v", "--verbose", action="store_true",
                         help="let PyMzn be verbose")
-    parser.add_argument("-W", "--weights", type=str, default=None,
-                        help="path to pickle file with user weights")
     args = parser.parse_args()
 
     pymzn.debug(args.verbose)
