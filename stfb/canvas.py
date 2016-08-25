@@ -51,7 +51,8 @@ solve minimize objective;
 """
 
 class CanvasProblem(Problem):
-    def __init__(self, num_features=100, noise=0.1, sparsity=0.2, rng=None):
+    def __init__(self, num_features=100, noise=0.1, sparsity=0.2, rng=None,
+                 w_star=None):
         rng = check_random_state(rng)
         self.noise, self.rng = noise, rng
 
@@ -71,12 +72,12 @@ class CanvasProblem(Problem):
         _TEMPLATE = \
             _TEMPLATE.format(canvas_size=canvas_size,
                              phis="\n".join(self.features), solve="{solve}")
-
-        w_star = rng.normal(size=num_features)
-        if sparsity < 1.0:
-            nnz_features = max(1, int(np.ceil(sparsity * num_features)))
-            zeros = rng.permutation(num_features)[nnz_features:]
-            w_star[zeros] = 0
+        if w_star is None:
+            w_star = rng.normal(size=num_features)
+            if sparsity < 1.0:
+                nnz_features = max(1, int(np.ceil(sparsity * num_features)))
+                zeros = rng.permutation(num_features)[nnz_features:]
+                w_star[zeros] = 0
 
         super().__init__(2, 2, num_features, w_star)
 

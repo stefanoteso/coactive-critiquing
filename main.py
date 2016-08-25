@@ -7,16 +7,17 @@ import stfb
 
 PROBLEMS = {
     "canvas":
-        lambda args, rng:
+        lambda args, rng, w_star:
             stfb.CanvasProblem(noise=args.noise, sparsity=args.sparsity,
-                               rng=rng),
+                               rng=rng, w_star=w_star),
     "pc":
-        lambda args, rng:
-            stfb.PCProblem(noise=args.noise, sparsity=args.sparsity, rng=rng),
+        lambda args, rng, w_star:
+            stfb.PCProblem(noise=args.noise, sparsity=args.sparsity, rng=rng,
+                           w_star=w_star),
     "travel":
-        lambda args, rng:
+        lambda args, rng, w_star:
             stfb.TravelProblem(noise=args.noise, sparsity=args.sparsity,
-                               rng=rng),
+                               rng=rng, w_star=w_star),
 }
 
 LEARNERS = {
@@ -96,6 +97,8 @@ def main():
                         help="let structured feedback be verbose")
     parser.add_argument("-v", "--verbose", action="store_true",
                         help="let PyMzn be verbose")
+    parser.add_argument("-W", "--weights", type=str, default=None,
+                        help="path to pickle file with user weights")
     args = parser.parse_args()
 
     pymzn.debug(args.verbose)
@@ -111,12 +114,19 @@ def main():
         assert old_is_critiques.shape[1] <= args.max_iters
         old_num_critiques = np.sum(old_is_critiques, axis=1).astype(int)
 
+    weights = None
+    if args.weights is not None:
+        weights = pickle.load(open(args.weights, 'rb'))
+
     # Run the main loop
     all_losses, all_times, all_is_critiques = [], [], []
     for i in range(args.num_users):
         print("{}\nUSER {}/{}\n{}".format(SEP, i, args.num_users, SEP))
         rng = np.random.RandomState(args.seed + i)
-        problem = PROBLEMS[args.problem](args, rng)
+        w_star = None
+        if weights is not None:
+            w_star = weights[i]
+        problem = PROBLEMS[args.problem](args, rng, w_star)
         num_critiques_for_user = None
         if args.method == "drone-cpp":
             num_critiques_for_user = old_num_critiques[i]

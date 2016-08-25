@@ -172,7 +172,7 @@ solve minimize objective;
 """
 
 class PCProblem(Problem):
-    def __init__(self, noise=0.1, sparsity=0.2, rng=None):
+    def __init__(self, noise=0.1, sparsity=0.2, rng=None, w_star=None):
         rng = check_random_state(rng)
         self.noise, self.rng = noise, rng
 
@@ -225,12 +225,13 @@ class PCProblem(Problem):
         _TEMPLATE = \
             _TEMPLATE.format(phis="\n".join(self.features), solve="{solve}")
 
-        # Sample the weight vector
-        w_star = 2 * rng.randint(0, 2, size=num_features) - 1
-        if sparsity < 1.0:
-            nnz_features = max(1, int(np.ceil(sparsity * num_features)))
-            zeros = rng.permutation(num_features)[nnz_features:]
-            w_star[zeros] = 0
+        if w_star is None:
+            # Sample the weight vector
+            w_star = 2 * rng.randint(0, 2, size=num_features) - 1
+            if sparsity < 1.0:
+                nnz_features = max(1, int(np.ceil(sparsity * num_features)))
+                zeros = rng.permutation(num_features)[nnz_features:]
+                w_star[zeros] = 0
 
         super().__init__(num_attributes, num_base_features, num_features,
                          w_star)
