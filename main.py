@@ -70,39 +70,9 @@ def _to_matrix(l, rows=None, cols=None):
         m[i,:len(x)] = x
     return m
 
-def main():
-    import argparse
-
+def main(args):
     np.seterr(all="raise")
     np.set_printoptions(precision=3, threshold=np.nan)
-
-    parser = argparse.ArgumentParser(formatter_class=argparse.ArgumentDefaultsHelpFormatter)
-    parser.add_argument("problem", type=str, help="any of {}".format(list(PROBLEMS.keys())))
-    parser.add_argument("method", type=str, help="any of {}".format(list(METHODS.keys())))
-    parser.add_argument("-U", "--num-users", type=int, default=10,
-                        help="number of users to average over")
-    parser.add_argument("-T", "--max-iters", type=int, default=100,
-                        help="maximum number of iterations")
-    parser.add_argument("-S", "--sparsity", type=float, default=0.2,
-                        help="percentage of non-zero weights")
-    parser.add_argument("-E", "--noise", type=float, default=0.1,
-                        help="amplitude of noise for improvement query")
-    parser.add_argument("-u", "--update", type=str, default="perceptron",
-                        help="pp update type")
-    parser.add_argument("-p", "--perturbation", type=float, default=0.0,
-                        help="amount of inference perturbation")
-    parser.add_argument("-g", "--gamma", type=float, default=1.0,
-                        help="coefficient for probabilistic query critique "
-                             "selection")
-    parser.add_argument("-W", "--weights", type=str, default=None,
-                        help="path to pickle file with user weights")
-    parser.add_argument("-s", "--seed", type=int, default=0,
-                        help="RNG seed")
-    parser.add_argument("-d", "--debug", action="store_true",
-                        help="let structured feedback be verbose")
-    parser.add_argument("-v", "--verbose", action="store_true",
-                        help="let PyMzn be verbose")
-    args = parser.parse_args()
 
     pymzn.debug(args.verbose)
 
@@ -152,4 +122,34 @@ def main():
         pickle.dump(data, fp)
 
 if __name__ == "__main__":
-    main()
+    import argparse
+
+    parser = argparse.ArgumentParser(formatter_class=argparse.ArgumentDefaultsHelpFormatter)
+    parser.add_argument("problem", type=str, help="any of {}".format(list(PROBLEMS.keys())))
+    parser.add_argument("method", type=str, help="any of {}".format(list(METHODS.keys())))
+    parser.add_argument("-U", "--num-users", type=int, default=10,
+                        help="number of users to average over")
+    parser.add_argument("-T", "--max-iters", type=int, default=100,
+                        help="maximum number of iterations")
+    parser.add_argument("-S", "--sparsity", type=float, default=0.2,
+                        help="percentage of non-zero weights")
+    parser.add_argument("-E", "--noise", type=float, default=0.1,
+                        help="amplitude of noise for improvement query")
+    parser.add_argument("-u", "--update", type=str, default="perceptron",
+                        help="pp update type")
+    parser.add_argument("-p", "--perturbation", type=float, default=0.0,
+                        help="amount of inference perturbation")
+    parser.add_argument("-g", "--gamma", type=float, default=1.0,
+                        help="coefficient for probabilistic query critique "
+                             "selection")
+    parser.add_argument("-W", "--weights", type=str, default=None,
+                        help="path to pickle file with user weights")
+    parser.add_argument("-s", "--seed", type=int, default=0,
+                        help="RNG seed")
+    parser.add_argument("-d", "--debug", action="store_true",
+                        help="let structured feedback be verbose")
+    parser.add_argument("-v", "--verbose", action="store_true",
+                        help="let PyMzn be verbose")
+    args = parser.parse_args()
+
+    main(args)
