@@ -57,7 +57,7 @@ def _get_experiment_path(args, method=None):
     name = "_".join(map(str, [
         args.problem, method, args.num_users, args.max_iters,
         args.noise, args.sparsity, args.update, args.perturbation,
-        args.seed]))
+        args.seed, args.gamma]))
     return "results_" + name + ".pickle"
 
 def _to_matrix(l, rows=None, cols=None):
