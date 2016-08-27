@@ -29,7 +29,8 @@ for gamma in gammas:
     }
     
     Args = namedtuple('Args', args.keys())
-    main.main(Args(**args))
+    args = Args(**args)
+    main.main()
     
     result_file_name = main._get_experiment_path(args)
     matrix_loss = pickle.load(result_file_name)['matrix_loss']
