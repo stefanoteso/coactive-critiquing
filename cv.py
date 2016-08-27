@@ -39,4 +39,4 @@ for gamma in gammas:
     print('gamma={}, auc={}'.format(gamma, auc))
 
 best_gamma = max(gammas, gammas.get)
-print('Best gamma: gamma={}, auc={}'.format(best_gamma, gammas[best_gamma]))
+print('Best gamma: problem={}, sparsity={}, noise={}, gamma={}, auc={}'.format(best_gamma, gammas[best_gamma]))
