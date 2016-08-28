@@ -33,7 +33,7 @@ for gamma in gammas:
     main.main(args)
     
     result_file_name = main._get_experiment_path(args)
-    matrix_loss = pickle.load(result_file_name)['matrix_loss']
+    matrix_loss = pickle.load(open(result_file_name, 'rb'))['matrix_loss']
     auc = matrix_loss.mean(axis=0).sum()
     aucs[str(gamma)] = auc
     print('gamma={}, auc={}'.format(gamma, auc))
