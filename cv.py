@@ -33,10 +33,10 @@ for gamma in gammas:
     main.main(args)
     
     result_file_name = main._get_experiment_path(args)
-    matrix_loss = pickle.load(open(result_file_name, 'rb'))['matrix_loss']
+    matrix_loss = pickle.load(open(result_file_name, 'rb'))['loss_matrix']
     auc = matrix_loss.mean(axis=0).sum()
     aucs[str(gamma)] = auc
     print('gamma={}, auc={}'.format(gamma, auc))
 
-best_gamma = max(gammas, gammas.get)
-print('Best gamma: problem={}, sparsity={}, noise={}, gamma={}, auc={}'.format(best_gamma, gammas[best_gamma]))
+best_gamma = min(aucs, key=aucs.get)
+print('Best gamma: problem={}, sparsity={}, noise={}, gamma={}, auc={}'.format(problem, sparsity, noise, best_gamma, aucs[best_gamma]))
