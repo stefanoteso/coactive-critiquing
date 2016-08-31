@@ -159,7 +159,7 @@ def pp(problem, max_iters, targets, Learner=Perceptron, can_critique=False,
         elif not is_separable(deltas, d):
             if not ask_critique:
                 s += 1
-            p = (gamma * s) / (gamma * s  + (it + 1))
+            p = 1 # (gamma * s) / (gamma * s  + (it + 1))
             ask_critique = bool(rng.binomial(1, p))
         t1 = time() - t1
 
