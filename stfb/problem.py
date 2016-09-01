@@ -260,8 +260,8 @@ class Problem(object):
         assert len(targets) < self.num_features, \
             "requested critique in full feature space"
 
-        scores = self.w_star * (self.phi(x_bar, "all") - self.phi(x, "all"))
-        scores = scores.astype(np.float32)
+        delta = self.phi(x_bar, "all") - self.phi(x, "all")
+        scores = (self.w_star * delta).astype(float)
 
         if self.noise == 0:
             scores[targets] = np.nan
@@ -271,7 +271,10 @@ class Problem(object):
             if (scores != 0).any():
                 scores += np.abs(np.min(scores))
                 scores[targets] = 0
-                pvals = scores / (np.sum(scores) + 1e-3)
+                pvals = scores / (np.sum(scores) + 1e-9)
+                mass = np.sum(pvals)
+                assert mass < 1, np.sum(pvals)
+                assert np.abs(mass - 1) < 1e-3, np.sum(pvals)
                 rho = np.nonzero(self.rng.multinomial(1, pvals))[0][0]
             else:
                 # this can happen when x_bar is better than x only for features
