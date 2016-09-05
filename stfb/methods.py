@@ -48,7 +48,7 @@ def is_separable(deltas, d, verbose=False):
 
 
 def pp(problem, max_iters, targets, Learner=Perceptron, can_critique=False,
-       num_critiques=None, perturbation=0, rng=None, debug=False, gamma=1.0):
+       num_critiques=None, perturbation=0, rng=None, debug=False):
     """The (Critiquing) Preference Perceptron [1]_.
 
     Contrary to the original algorithm, there is no support for the "context"
@@ -122,7 +122,6 @@ def pp(problem, max_iters, targets, Learner=Perceptron, can_critique=False,
     if num_critiques is not None:
         critique_iters = set(rng.permutation(max_iters)[:num_critiques])
 
-    s = 0.0
     ask_critique = True
     trace, dataset, deltas = [], [], []
     num_real_improvements = 0
@@ -145,22 +144,8 @@ def pp(problem, max_iters, targets, Learner=Perceptron, can_critique=False,
 
         u = problem.utility(x, "all")
         u_bar = problem.utility(x_bar, "all")
-        is_improvement = u_bar > u
-        if is_improvement:
-            num_real_improvements += 1
-
         d = delta((x_bar, x), targets)
-
-        p, ask_critique = 0.0, False
-        if not can_critique:
-            pass
-        elif it in critique_iters:
-            p, ask_critique = 1.0, True
-        elif not is_separable(deltas, d):
-            if not ask_critique:
-                s += 1
-            p = 1 # (gamma * s) / (gamma * s  + (it + 1))
-            ask_critique = bool(rng.binomial(1, p))
+        ask_critique = not is_separable(deltas, d)
         t1 = time() - t1
 
         rho = None
@@ -172,7 +157,6 @@ def pp(problem, max_iters, targets, Learner=Perceptron, can_critique=False,
             w = learner.w
             phi = problem.phi(x, "all")
             phi_bar = problem.phi(x_bar, "all")
-            perc_real_improvements = num_real_improvements / (it + 1)
             print(dedent("""\
                 == ITERATION {it:3d} ==
 
@@ -190,13 +174,9 @@ def pp(problem, max_iters, targets, Learner=Perceptron, can_critique=False,
                 phi(x_bar) =
                 {phi_bar}
 
-                is_improvement = {is_improvement}
-                % real improvements = {perc_real_improvements}
-
                 phi(x_bar) - phi(x) =
                 {d}
                 ask_critique = {ask_critique}
-                p = {p}
 
                 rho = {rho}
                 """).format(**locals()))
@@ -222,9 +202,6 @@ def pp(problem, max_iters, targets, Learner=Perceptron, can_critique=False,
                 features = {targets}
                 |features| = {num_targets}
                 """).format(**locals()))
-
-        is_critique = rho is not None
-        trace.append((loss, t0 + t1, is_critique))
     else:
         print("user not satisfied, iterations elapsed")
 
