@@ -30,26 +30,26 @@ METHODS = {
             stfb.pp(problem, args.max_iters, "attributes",
                     Learner=LEARNERS[args.update],
                     perturbation=args.perturbation,
-                    rng=rng, debug=args.debug, gamma=args.gamma),
+                    rng=rng, debug=args.debug),
     "pp-all":
         lambda args, problem, num_critiques, rng:
             stfb.pp(problem, args.max_iters, "all",
                     Learner=LEARNERS[args.update],
                     perturbation=args.perturbation,
-                    rng=rng, debug=args.debug, gamma=args.gamma),
+                    rng=rng, debug=args.debug),
     "cpp":
         lambda args, problem, num_critiques, rng:
             stfb.pp(problem, args.max_iters, "attributes", can_critique=True,
                     Learner=LEARNERS[args.update],
                     perturbation=args.perturbation,
-                    rng=rng, debug=args.debug, gamma=args.gamma),
+                    rng=rng, debug=args.debug),
     "drone-cpp":
         lambda args, problem, num_critiques, rng:
             stfb.pp(problem, args.max_iters, "attributes", can_critique=True,
                     num_critiques=num_critiques,
                     Learner=LEARNERS[args.update],
                     perturbation=args.perturbation,
-                    rng=rng, debug=args.debug, gamma=args.gamma),
+                    rng=rng, debug=args.debug),
 }
 
 def _get_experiment_path(args, method=None):
@@ -57,7 +57,7 @@ def _get_experiment_path(args, method=None):
     name = "_".join(map(str, [
         args.problem, method, args.num_users, args.max_iters,
         args.noise, args.sparsity, args.update, args.perturbation,
-        args.seed, args.gamma]))
+        args.seed]))
     return "results_" + name + ".pickle"
 
 def _to_matrix(l, rows=None, cols=None):
@@ -139,9 +139,6 @@ if __name__ == "__main__":
                         help="pp update type")
     parser.add_argument("-p", "--perturbation", type=float, default=0.0,
                         help="amount of inference perturbation")
-    parser.add_argument("-g", "--gamma", type=float, default=1.0,
-                        help="coefficient for probabilistic query critique "
-                             "selection")
     parser.add_argument("-W", "--weights", type=str, default=None,
                         help="path to pickle file with user weights")
     parser.add_argument("-s", "--seed", type=int, default=0,
