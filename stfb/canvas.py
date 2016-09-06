@@ -59,7 +59,7 @@ class CanvasProblem(Problem):
         with open("datasets/canvas.pickle", "rb") as fp:
             dataset = pickle.load(fp)
             canvas_size = dataset["canvas_size"]
-            rectangles = dataset["rectangles"]
+            rectangles = dataset["rectangles"][:50]
 
         self.features = []
         for j, (xmin, xmax, ymin, ymax) in enumerate(rectangles):
