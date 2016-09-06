@@ -122,9 +122,7 @@ def pp(problem, max_iters, targets, Learner=Perceptron, can_critique=False,
     if num_critiques is not None:
         critique_iters = set(rng.permutation(max_iters)[:num_critiques])
 
-    ask_critique = True
     trace, dataset, deltas = [], [], []
-    num_real_improvements = 0
     for it in range(max_iters):
         t0 = time()
         w = np.array(learner.w)
@@ -145,7 +143,7 @@ def pp(problem, max_iters, targets, Learner=Perceptron, can_critique=False,
         u = problem.utility(x, "all")
         u_bar = problem.utility(x_bar, "all")
         d = delta((x_bar, x), targets)
-        ask_critique = not is_separable(deltas, d)
+        ask_critique = can_critique and not is_separable(deltas, d)
         t1 = time() - t1
 
         rho = None
