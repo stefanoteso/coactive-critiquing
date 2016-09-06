@@ -182,8 +182,16 @@ for ent1, ent2 in product(ents, ents):
 np.fill_diagonal(travel_time, 0)
 
 # Compute the entity->region map
-num_regions = len(regs)
-regions = [reg_to_i[ent_to_reg[ent]] for ent in ents]
+indices, location_regions = [], []
+for ent in ents:
+    index = reg_to_i[ent_to_reg[ent]]
+    if not index in indices:
+        indices.append(index)
+    new_index = indices.index(index)
+    location_regions.append(new_index)
+num_regions = len(set(indices))
+
+
 
 print("""\
 location activities =
@@ -196,7 +204,7 @@ travel time =
 {travel_time}
 
 regions =
-{regions}
+{location_regions} / {num_regions}
 """.format(**locals()))
 
 dataset = {
@@ -204,7 +212,7 @@ dataset = {
     "location_cost": location_cost,
     "travel_time": travel_time,
     "num_regions": num_regions,
-    "regions": regions,
+    "regions": location_regions,
 }
 with open("datasets/travel_tn.pickle", "wb") as fp:
     pickle.dump(dataset, fp)
