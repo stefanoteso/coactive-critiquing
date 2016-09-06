@@ -195,6 +195,8 @@ def pp(problem, max_iters, targets, Learner=Perceptron, can_critique=False,
                 features = {targets}
                 |features| = {num_targets}
                 """).format(**locals()))
+
+        trace.append((loss, t0 + t1, ask_critique))
     else:
         print("user not satisfied, iterations elapsed")
 
