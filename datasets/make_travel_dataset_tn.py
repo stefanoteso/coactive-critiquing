@@ -187,7 +187,7 @@ for ent in ents:
     index = reg_to_i[ent_to_reg[ent]]
     if not index in indices:
         indices.append(index)
-    new_index = indices.index(index)
+    new_index = indices.index(index) + 1
     location_regions.append(new_index)
 num_regions = len(set(indices))
 
