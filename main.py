@@ -9,7 +9,8 @@ PROBLEMS = {
     "canvas":
         lambda args, rng, w_star:
             stfb.CanvasProblem(noise=args.noise, sparsity=args.sparsity,
-                               rng=rng, w_star=w_star),
+                               rng=rng, w_star=w_star,
+                               perc_feat=args.perc_feat),
     "pc":
         lambda args, rng, w_star:
             stfb.PCProblem(noise=args.noise, sparsity=args.sparsity, rng=rng,
@@ -57,7 +58,7 @@ def _get_experiment_path(args, method=None):
     name = "_".join(map(str, [
         args.problem, method, args.num_users, args.max_iters,
         args.noise, args.sparsity, args.update, args.perturbation,
-        args.seed]))
+        args.perc_feat, args.seed]))
     return "results_" + name + ".pickle"
 
 def _to_matrix(l, rows=None, cols=None):
@@ -139,6 +140,8 @@ if __name__ == "__main__":
                         help="pp update type")
     parser.add_argument("-p", "--perturbation", type=float, default=0.0,
                         help="amount of inference perturbation")
+    parser.add_argument("-f", "--perc-feat", type=float, default=0.0,
+                        help="percentage of initial features for canvas")
     parser.add_argument("-W", "--weights", type=str, default=None,
                         help="path to pickle file with user weights")
     parser.add_argument("-s", "--seed", type=int, default=0,
