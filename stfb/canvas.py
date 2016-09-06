@@ -60,9 +60,10 @@ class CanvasProblem(Problem):
             dataset = pickle.load(fp)
             canvas_size = dataset["canvas_size"]
             rectangles = dataset["rectangles"][:50]
+            if w_star is not None:
+                w_star = w_star[:50]
             if perc_feat != 0.0:
                 if w_star is not None:
-                    w_star = w_star[:50]
                     utils = list(zip(rectangles, w_star))
                     self.rng.shuffle(utils)
                     rectangles, w_star = list(zip(*utils))
