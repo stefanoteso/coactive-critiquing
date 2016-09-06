@@ -134,7 +134,7 @@ class TravelProblem(Problem):
         self._horizon = horizon
         num_attributes = 3 * horizon - 1
 
-        with open("datasets/travel.pickle", "rb") as fp:
+        with open("datasets/travel_tn.pickle", "rb") as fp:
             dataset = pickle.load(fp)
 
         self._location_activities = dataset["location_activities"]
@@ -204,7 +204,7 @@ class TravelProblem(Problem):
         global _TEMPLATE
         _TEMPLATE = \
             _TEMPLATE.format(phis="\n".join(self.features), solve="{solve}")
-        
+
         if w_star is None:
             # Sample the weight vector
             w_star = rng.normal(size=num_features)
