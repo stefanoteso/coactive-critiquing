@@ -48,7 +48,7 @@ def is_separable(deltas, d, verbose=False):
 
 
 def pp(problem, max_iters, targets, Learner=Perceptron, can_critique=False,
-       num_critiques=None, perturbation=0, rng=None, debug=False):
+       num_critiques=None, rng=None, debug=False):
     """The (Critiquing) Preference Perceptron [1]_.
 
     Contrary to the original algorithm, there is no support for the "context"
@@ -73,9 +73,6 @@ def pp(problem, max_iters, targets, Learner=Perceptron, can_critique=False,
         How many critiques to ask the user for. Critiques are allocated
         uniformly at random in the max_iter iterations. If None, the usual
         query type selection heuristic is used.
-    perturbation : float, defaults to 0
-        Amount of w perturbation to use during inference. Used for
-        implementing the *perturbed* preference perceptron.
     Learner : class, defaults to Perceptron
         The learner to be used.
     rng : int or None
@@ -126,8 +123,6 @@ def pp(problem, max_iters, targets, Learner=Perceptron, can_critique=False,
     for it in range(max_iters):
         t0 = time()
         w = np.array(learner.w)
-        if perturbation > 0:
-            w[targets] = rng.normal(0, perturbation, size=len(targets))
         x = problem.infer(w, targets)
         t0 = time() - t0
 
