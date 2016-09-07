@@ -25,27 +25,27 @@ METHODS = {
     "pp-attr":
         lambda args, problem, num_critiques, rng:
             stfb.pp(problem, args.max_iters, "attributes",
-                    rng=rng, debug=args.debug),
+                    rng=rng, fill_with_ones=args.ones, debug=args.debug),
     "pp-all":
         lambda args, problem, num_critiques, rng:
             stfb.pp(problem, args.max_iters, "all",
-                    rng=rng, debug=args.debug),
+                    rng=rng, fill_with_ones=args.ones, debug=args.debug),
     "cpp":
         lambda args, problem, num_critiques, rng:
             stfb.pp(problem, args.max_iters, "attributes", can_critique=True,
-                    rng=rng, debug=args.debug),
+                    rng=rng, fill_with_ones=args.ones, debug=args.debug),
     "drone-cpp":
         lambda args, problem, num_critiques, rng:
             stfb.pp(problem, args.max_iters, "attributes", can_critique=True,
                     num_critiques=num_critiques,
-                    rng=rng, debug=args.debug),
+                    rng=rng, fill_with_ones=args.ones, debug=args.debug),
 }
 
 def _get_experiment_path(args, method=None):
     method = args.method if method is None else method
     name = "_".join(map(str, [
         args.problem, method, args.num_users, args.max_iters,
-        args.noise, args.sparsity, args.perc_feat, args.seed]))
+        args.noise, args.sparsity, args.perc_feat, args.ones, args.seed]))
     return "results_" + name + ".pickle"
 
 def _to_matrix(l, rows=None, cols=None):
@@ -127,6 +127,8 @@ if __name__ == "__main__":
                         help="percentage of initial features for canvas")
     parser.add_argument("-W", "--weights", type=str, default=None,
                         help="path to pickle file with user weights")
+    parser.add_argument("-1", "--ones", action="store_true",
+                        help="initialize new weights to 1 rather than to 0")
     parser.add_argument("-s", "--seed", type=int, default=0,
                         help="RNG seed")
     parser.add_argument("-d", "--debug", action="store_true",
