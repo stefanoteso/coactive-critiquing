@@ -26,7 +26,7 @@ def is_separable(deltas, d, verbose=False):
 
 
 def pp(problem, max_iters, targets, can_critique=False, num_critiques=None,
-       rng=None, debug=False):
+       fill_with_ones=False, rng=None, debug=False):
     """The (Critiquing) Preference Perceptron [1]_.
 
     Contrary to the original algorithm, there is no support for the "context"
@@ -51,6 +51,8 @@ def pp(problem, max_iters, targets, can_critique=False, num_critiques=None,
         How many critiques to ask the user for. Critiques are allocated
         uniformly at random in the max_iter iterations. If None, the usual
         query type selection heuristic is used.
+    fill_with_ones : bool, defaults to False
+        What it says.
     rng : int or None
         The RNG.
     debug : bool, defaults to False
@@ -68,9 +70,12 @@ def pp(problem, max_iters, targets, can_critique=False, num_critiques=None,
     .. [1] Shivaswamy and Joachims, *Coactive Learning*, JAIR 53 (2015)
     """
     rng = check_random_state(rng)
-    w = np.zeros(problem.num_features, dtype=np.float32)
 
     targets = problem.enumerate_features(targets)
+
+    w = np.zeros(problem.num_features, dtype=np.float32)
+    if fill_with_ones:
+        w[targets] = np.ones(len(targets))
 
     def delta(xs, targets):
         if isinstance(xs, tuple):
@@ -154,7 +159,7 @@ def pp(problem, max_iters, targets, can_critique=False, num_critiques=None,
         dataset.append((x_bar, x))
         if rho is not None:
             targets.append(rho)
-            w[rho] = 0.0
+            w[rho] = 1.0 if fill_with_ones else 0.0
             deltas = delta(dataset, targets)
         else:
             deltas.append(d)
