@@ -95,9 +95,11 @@ set of int: FEATURES = 1..N_FEATURES;
 
 set of int: ACTIVE_FEATURES;
 
-array[FEATURES] of float: W;
+array[FEATURES] of int: W;
 array[FEATURES] of var int: phi;
 array[FEATURES] of int: INPUT_PHI;
+
+constraint location[1] = 1;
 
 {phis}
 
@@ -107,7 +109,7 @@ array[FEATURES] of int: INPUT_PHI;
 _PHI = "solve satisfy;"
 
 _INFER = """\
-var float: objective =
+var int: objective =
     sum(feat in ACTIVE_FEATURES)(W[feat] * phi[feat]);
 
 solve maximize objective;
@@ -245,6 +247,10 @@ class TravelProblem(Problem):
 
         return super().phi(x, features, PATH, data).astype(np.int32)
 
+    @staticmethod
+    def _to_int(w, precision=1000.0):
+        return np.rint(w * precision).astype(int)
+
     def infer(self, w, features):
         PATH = "travel-infer.mzn"
 
@@ -263,7 +269,7 @@ class TravelProblem(Problem):
             "LOCATION_ACTIVITIES": self._location_activities,
             "LOCATION_COST": self._location_cost,
             "TRAVEL_TIME": self._travel_time,
-            "W": self.array_to_assignment(w, float),
+            "W": self.array_to_assignment(self._to_int(w), int),
             "INPUT_X": [0] * self.num_attributes, # doesn't matter
             "INPUT_PHI": [0] * self.num_features, # doesn't matter
         }
@@ -294,7 +300,7 @@ class TravelProblem(Problem):
             "LOCATION_ACTIVITIES": self._location_activities,
             "LOCATION_COST": self._location_cost,
             "TRAVEL_TIME": self._travel_time,
-            "W": self.array_to_assignment(w_star, float),
+            "W": self.array_to_assignment(self._to_int(w_star), int),
             "INPUT_X": self.array_to_assignment(x, int),
             "INPUT_PHI": self.array_to_assignment(phi, int),
         }
