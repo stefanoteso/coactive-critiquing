@@ -9,7 +9,7 @@ from sklearn.utils import check_random_state
 from . import Problem
 
 _TEMPLATE = """\
-int: N_ATTRIBUTES = {num_attributes};
+int: N_ATTRIBUTES = 2;
 set of int: ATTRIBUTES = 1..N_ATTRIBUTES;
 
 int: N_FEATURES;
@@ -59,22 +59,21 @@ class CanvasProblem(Problem):
         with open("datasets/canvas.pickle", "rb") as fp:
             dataset = pickle.load(fp)
             canvas_size = dataset["canvas_size"]
-            rectangles = dataset["rectangles"][:50]
+            rectangles = dataset["rectangles"]
+
+        if perc_feat != 0.0:
             if w_star is not None:
-                w_star = w_star[:50]
-            if perc_feat != 0.0:
-                if w_star is not None:
-                    utils = list(zip(rectangles, w_star))
-                    self.rng.shuffle(utils)
-                    rectangles, w_star = list(zip(*utils))
-                    w_star = np.array(w_star)
-                else:
-                    self.rng.shuffle(rectangles)
+                utils = list(zip(rectangles, w_star))
+                self.rng.shuffle(utils)
+                rectangles, w_star = list(zip(*utils))
+                w_star = np.array(w_star)
+            else:
+                self.rng.shuffle(rectangles)
 
         if perc_feat == 0.0:
-            num_attributes = 2
+            num_base_features = 2
         else:
-            num_attributes = int(len(rectangles) * perc_feat)
+            num_base_features = int(len(rectangles) * perc_feat)
 
         self.features = []
         for j, (xmin, xmax, ymin, ymax) in enumerate(rectangles):
@@ -86,8 +85,7 @@ class CanvasProblem(Problem):
         global _TEMPLATE
         _TEMPLATE = \
             _TEMPLATE.format(canvas_size=canvas_size,
-                             phis="\n".join(self.features), solve="{solve}",
-                             num_attributes=num_attributes)
+                             phis="\n".join(self.features), solve="{solve}")
         if w_star is None:
             w_star = rng.normal(size=num_features)
             if sparsity < 1.0:
@@ -95,7 +93,7 @@ class CanvasProblem(Problem):
                 zeros = rng.permutation(num_features)[nnz_features:]
                 w_star[zeros] = 0
 
-        super().__init__(num_attributes, num_attributes, num_features, w_star)
+        super().__init__(2, num_base_features, num_features, w_star)
 
     def get_feature_radius(self):
         return 1.0
