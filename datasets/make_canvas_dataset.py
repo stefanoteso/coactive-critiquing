@@ -5,7 +5,7 @@ import numpy as np
 import pickle
 
 CANVAS_SIZE = 100
-NUM_RECTANGLES = 100
+NUM_RECTANGLES = 50
 
 np.random.seed(0)
 
