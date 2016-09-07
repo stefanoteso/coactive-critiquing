@@ -61,6 +61,10 @@ class CanvasProblem(Problem):
             canvas_size = dataset["canvas_size"]
             rectangles = dataset["rectangles"]
 
+        # XXX hack
+        if w_star is not None:
+            w_star = w_star[:50]
+
         if perc_feat != 0.0:
             if w_star is not None:
                 utils = list(zip(rectangles, w_star))
