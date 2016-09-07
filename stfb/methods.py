@@ -6,28 +6,6 @@ from sklearn.utils import check_random_state
 from textwrap import dedent
 from time import time
 
-class Perceptron(object):
-    """Implementation of the standard perceptron."""
-    def __init__(self, problem, features, **kwargs):
-        self._debug = kwargs.pop("debug", False)
-        self._rng = check_random_state(kwargs.pop("rng", None))
-
-        targets = problem.enumerate_features(features)
-
-        self.w = np.zeros(problem.num_features, dtype=np.float32)
-        if self._debug:
-            self.w[targets] = np.ones(len(targets))
-        else:
-            # XXX for sparse users perhaps sample from a sparse distribution
-            self.w[targets] = \
-                rng.normal(0, 1, size=len(targets)).astype(np.float32)
-
-    def default_weight(self, num_targets):
-        return 1.0 if self._debug else self._rng.normal(0, 1)
-
-    def update(self, delta):
-        self.w += delta
-
 
 def is_separable(deltas, d, verbose=False):
     """Checks whether a dataset is separable using hard SVM."""
@@ -47,8 +25,8 @@ def is_separable(deltas, d, verbose=False):
     return w.value is not None
 
 
-def pp(problem, max_iters, targets, Learner=Perceptron, can_critique=False,
-       num_critiques=None, rng=None, debug=False):
+def pp(problem, max_iters, targets, can_critique=False, num_critiques=None,
+       rng=None, debug=False):
     """The (Critiquing) Preference Perceptron [1]_.
 
     Contrary to the original algorithm, there is no support for the "context"
@@ -73,8 +51,6 @@ def pp(problem, max_iters, targets, Learner=Perceptron, can_critique=False,
         How many critiques to ask the user for. Critiques are allocated
         uniformly at random in the max_iter iterations. If None, the usual
         query type selection heuristic is used.
-    Learner : class, defaults to Perceptron
-        The learner to be used.
     rng : int or None
         The RNG.
     debug : bool, defaults to False
@@ -91,7 +67,8 @@ def pp(problem, max_iters, targets, Learner=Perceptron, can_critique=False,
     ----------
     .. [1] Shivaswamy and Joachims, *Coactive Learning*, JAIR 53 (2015)
     """
-    learner = Learner(problem, targets, max_iters=max_iters, debug=debug)
+    rng = check_random_state(rng)
+    w = np.zeros(problem.num_features, dtype=np.float32)
 
     targets = problem.enumerate_features(targets)
 
@@ -122,7 +99,7 @@ def pp(problem, max_iters, targets, Learner=Perceptron, can_critique=False,
     trace, dataset, deltas = [], [], []
     for it in range(max_iters):
         t0 = time()
-        w = np.array(learner.w)
+        w = np.array(w)
         x = problem.infer(w, targets)
         t0 = time() - t0
 
@@ -132,7 +109,7 @@ def pp(problem, max_iters, targets, Learner=Perceptron, can_critique=False,
         t1 = time()
         if x_bar == "satisfied":
             trace.append((loss, t0, False))
-            print("user is satisfied!")
+            print("user is satisfied after {} iterations!".format(it))
             break
 
         u = problem.utility(x, "all")
@@ -147,7 +124,6 @@ def pp(problem, max_iters, targets, Learner=Perceptron, can_critique=False,
             assert rho > 0
 
         if debug:
-            w = learner.w
             phi = problem.phi(x, "all")
             phi_bar = problem.phi(x_bar, "all")
             print(dedent("""\
@@ -178,15 +154,14 @@ def pp(problem, max_iters, targets, Learner=Perceptron, can_critique=False,
         dataset.append((x_bar, x))
         if rho is not None:
             targets.append(rho)
-            learner.w[rho] = learner.default_weight(len(targets))
+            w[rho] = 0.0
             deltas = delta(dataset, targets)
         else:
             deltas.append(d)
-        learner.update(d)
+        w += d
         t2 = time() - t2
 
         if debug:
-            w = learner.w
             num_targets = len(targets)
             print(dedent("""\
                 new w =
