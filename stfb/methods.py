@@ -117,8 +117,6 @@ def pp(problem, max_iters, targets, can_critique=False, num_critiques=None,
             print("user is satisfied after {} iterations!".format(it))
             break
 
-        u = problem.utility(x, "all")
-        u_bar = problem.utility(x_bar, "all")
         d = delta((x_bar, x), targets)
         ask_critique = can_critique and not is_separable(deltas, d)
         t1 = time() - t1
@@ -176,7 +174,7 @@ def pp(problem, max_iters, targets, can_critique=False, num_critiques=None,
                 |features| = {num_targets}
                 """).format(**locals()))
 
-        trace.append((loss, t0 + t1, ask_critique))
+        trace.append((loss, t0 + t1 + t2, ask_critique))
     else:
         print("user not satisfied, iterations elapsed")
 
