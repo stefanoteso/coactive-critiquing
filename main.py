@@ -21,31 +21,23 @@ PROBLEMS = {
                                rng=rng, w_star=w_star),
 }
 
-LEARNERS = {
-    "perceptron": stfb.Perceptron,
-}
-
 METHODS = {
     "pp-attr":
         lambda args, problem, num_critiques, rng:
             stfb.pp(problem, args.max_iters, "attributes",
-                    Learner=LEARNERS[args.update],
                     rng=rng, debug=args.debug),
     "pp-all":
         lambda args, problem, num_critiques, rng:
             stfb.pp(problem, args.max_iters, "all",
-                    Learner=LEARNERS[args.update],
                     rng=rng, debug=args.debug),
     "cpp":
         lambda args, problem, num_critiques, rng:
             stfb.pp(problem, args.max_iters, "attributes", can_critique=True,
-                    Learner=LEARNERS[args.update],
                     rng=rng, debug=args.debug),
     "drone-cpp":
         lambda args, problem, num_critiques, rng:
             stfb.pp(problem, args.max_iters, "attributes", can_critique=True,
                     num_critiques=num_critiques,
-                    Learner=LEARNERS[args.update],
                     rng=rng, debug=args.debug),
 }
 
@@ -53,8 +45,7 @@ def _get_experiment_path(args, method=None):
     method = args.method if method is None else method
     name = "_".join(map(str, [
         args.problem, method, args.num_users, args.max_iters,
-        args.noise, args.sparsity, args.update,
-        args.perc_feat, args.seed]))
+        args.noise, args.sparsity, args.perc_feat, args.seed]))
     return "results_" + name + ".pickle"
 
 def _to_matrix(l, rows=None, cols=None):
@@ -132,8 +123,6 @@ if __name__ == "__main__":
                         help="percentage of non-zero weights")
     parser.add_argument("-E", "--noise", type=float, default=0.1,
                         help="amplitude of noise for improvement query")
-    parser.add_argument("-u", "--update", type=str, default="perceptron",
-                        help="pp update type")
     parser.add_argument("-f", "--perc-feat", type=float, default=0.0,
                         help="percentage of initial features for canvas")
     parser.add_argument("-W", "--weights", type=str, default=None,
