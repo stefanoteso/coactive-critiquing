@@ -173,7 +173,7 @@ def pp(problem, max_iters, targets, can_critique=False, num_critiques=None,
                 features = {targets}
                 |features| = {num_targets}
                 """).format(**locals()))
-
+        print('\nt0={}\tt1={}\tt2={}\n'.format(t0, t1, t2))
         trace.append((loss, t0 + t1 + t2, ask_critique))
     else:
         print("user not satisfied, iterations elapsed")
