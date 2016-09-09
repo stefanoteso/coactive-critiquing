@@ -82,12 +82,14 @@ def main():
         assert loss_matrices[-1].shape == \
                time_matrices[-1].shape == \
                query_matrices[-1].shape
-    _draw_matrices(loss_ax, loss_matrices, experiment_args)
-    _draw_matrices(time_ax, time_matrices, experiment_args, cumulative=True)
-    _draw_matrices(query_ax, query_matrices, experiment_args, mean=True)
 
+    _draw_matrices(loss_ax, loss_matrices, experiment_args)
     loss_fig.savefig(args.png_basename + "_loss.png", bbox_inches="tight")
+
+    _draw_matrices(time_ax, time_matrices, experiment_args, cumulative=True)
     time_fig.savefig(args.png_basename + "_time.png", bbox_inches="tight")
+
+    _draw_matrices(query_ax, query_matrices, experiment_args, mean=True, cumulative=True)
     query_fig.savefig(args.png_basename + "_query.png", bbox_inches="tight")
 
 if __name__ == "__main__":
