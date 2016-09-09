@@ -4,6 +4,7 @@ import sys
 import pickle
 import numpy as np
 import matplotlib.pyplot as plt
+from collections import defaultdict
 
 _METHOD_TO_PLOTCONFIG = {
     "pp-attr":  ("#555753", "#2E3436", "D-"), # yellow
@@ -15,10 +16,33 @@ _METHOD_TO_PLOTCONFIG = {
 def _get_ticks(x):
     return np.ceil(x / 10)
 
-def _draw_matrices(ax, matrices, args, mean=False, cumulative=False):
+def _draw_matrices(ax, matrices, args, mean=False, cumulative=False,
+                   num_features=0):
+
+    pf_to_matrices_args = defaultdict(list)
+    non_pf_matrices, non_pf_args = [], []
+    for matrix, arg in zip(matrices, args):
+        if arg.method == "pp-attr":
+            pf_to_matrices_args[arg.perc_feat].append((matrix, arg))
+        else:
+            non_pf_matrices.append(matrix)
+            non_pf_args.append(arg)
+
+    for pf, matrices_args in pf_to_matrices_args.items():
+        pf_matrices, pf_args = zip(*matrices_args)
+        avg_matrix = sum(pf_matrices) / len(pf_matrices)
+        non_pf_matrices.append(avg_matrix)
+        non_pf_args.append(pf_args[0])
+
+    matrices = non_pf_matrices
+    args = non_pf_args
+
     max_x, max_y = None, None
     for i, (matrix, arg) in enumerate(zip(matrices, args)):
         fg, bg, marker = _METHOD_TO_PLOTCONFIG[arg.method]
+        if arg.method == "pp-attr":
+            fg = "#{:02x}00FF".format(int(arg.perc_feat * 255))
+            bg = "#{:02x}00FF".format(int(arg.perc_feat * 255))
 
         current_max_x = matrix.shape[1]
         if max_x is None or current_max_x > max_x:
