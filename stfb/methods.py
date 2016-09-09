@@ -124,7 +124,8 @@ def pp(problem, max_iters, targets, can_critique=False, num_critiques=None,
         rho = None
         if ask_critique:
             rho, _ = problem.query_critique(x, x_bar, targets)
-            assert rho > 0
+            ask_critique = rho is not None
+            assert rho is None or rho > 0
 
         if debug:
             phi = problem.phi(x, "all")
