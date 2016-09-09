@@ -212,8 +212,9 @@ class Problem(object):
         assert x_bar.shape == (self.num_attributes,)
 
         targets = self.enumerate_features(features)
-        assert len(targets) < self.num_features, \
-            "requested critique in full feature space"
+        if len(targets) >= self.num_features:
+            print("Warning: requested critique in full feature space. No dice."
+            return None
 
         delta = self.phi(x_bar, "all") - self.phi(x, "all")
         scores = (self.w_star * delta).astype(float)
