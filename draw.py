@@ -44,7 +44,7 @@ def _draw_matrices(ax, matrices, args, mean=False, cumulative=False, regret=Fals
             max_y = current_max_y
 
         ax.plot(x, y, marker, linewidth=2.5, color=fg)
-        ax.fill_between(x, y - yerr, y + yerr, alpha=0.35, linewidth=0, color=bg)
+        ax.fill_between(x, y - yerr, y + yerr, alpha=0.5, linewidth=0, color=bg)
 
     ax.set_xlim([0, max_x + 0.1])
     ax.set_ylim([0, max_y + 0.1])
