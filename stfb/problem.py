@@ -213,7 +213,7 @@ class Problem(object):
 
         targets = self.enumerate_features(features)
         if len(targets) >= self.num_features:
-            print("Warning: requested critique in full feature space. No dice."
+            print("Warning: requested critique in full feature space. No dice.")
             return None
 
         delta = self.phi(x_bar, "all") - self.phi(x, "all")
