@@ -7,10 +7,9 @@ import matplotlib.pyplot as plt
 from collections import defaultdict
 
 _METHOD_TO_PLOTCONFIG = {
-    "pp-attr":  ("#555753", "#2E3436", "D-"), # yellow
-    "pp-all":   ("#A40000", "#CC0000", "s-"), # red
-    "cpp":      ("#204A87", "#3465A4", "*-"), # blue
-    "drone-cpp":("#4E9A06", "#73D216", "o-"), # green
+    "pp-attr":  ("#555753", "#2E3436", "D-"),
+    "pp-all":   ("#A40000", "#CC0000", "s-"),
+    "cpp":      ("#00FF00", "#1FFF1F", "o-"),
 }
 
 def _get_ticks(x):
