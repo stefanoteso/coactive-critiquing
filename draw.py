@@ -8,8 +8,8 @@ from collections import defaultdict
 
 _METHOD_TO_PLOTCONFIG = {
     "pp-attr":  ("#555753", "#2E3436", "D-"),
-    "pp-all":   ("#A40000", "#CC0000", "s-"),
-    "cpp":      ("#00FF00", "#1FFF1F", "o-"),
+    "pp-all":   ("#CC0000", "#EF2929", "o-"),
+    "cpp":      ("#73D216", "#8AE234", "s-"),
 }
 
 def _get_ticks(x):
