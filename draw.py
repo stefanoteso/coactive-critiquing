@@ -17,25 +17,25 @@ def _get_ticks(x):
     return np.ceil(x / 10)
 
 def _draw_matrices(ax, matrices, args, mean=False, cumulative=False,
-                   num_features=0):
+                   num_features=None):
+
+    new_matrices, new_args = [], []
 
     pf_to_matrices_args = defaultdict(list)
-    non_pf_matrices, non_pf_args = [], []
     for matrix, arg in zip(matrices, args):
         if arg.method == "pp-attr":
             pf_to_matrices_args[arg.perc_feat].append((matrix, arg))
         else:
-            non_pf_matrices.append(matrix)
-            non_pf_args.append(arg)
+            new_matrices.append(matrix)
+            new_args.append(arg)
 
     for pf, matrices_args in pf_to_matrices_args.items():
         pf_matrices, pf_args = zip(*matrices_args)
         avg_matrix = sum(pf_matrices) / len(pf_matrices)
-        non_pf_matrices.append(avg_matrix)
-        non_pf_args.append(pf_args[0])
+        new_matrices.append(avg_matrix)
+        new_args.append(pf_args[0])
 
-    matrices = non_pf_matrices
-    args = non_pf_args
+    matrices, args = new_matrices, new_args
 
     max_x, max_y = None, None
     for i, (matrix, arg) in enumerate(zip(matrices, args)):
@@ -60,6 +60,14 @@ def _draw_matrices(ax, matrices, args, mean=False, cumulative=False,
 
         yerr = np.std(matrix, axis=0) / np.sqrt(matrix.shape[0])
 
+        if num_features is not None:
+            if arg.method == "pp-attr":
+                y = np.ones_like(y) * arg.perc_feat * num_features
+                yerr = np.zeros_like(y)
+            elif arg.method == "pp-all":
+                y = np.ones_like(y) * num_features
+                yerr = np.zeros_like(y)
+
         current_max_y = max(y + yerr)
         if max_y is None or current_max_y > max_y:
             max_y = current_max_y
@@ -81,19 +89,21 @@ def main():
                         help="plot path")
     parser.add_argument("results_path", type=str, nargs="+",
                         help="list of result files to plot")
+    parser.add_argument("-m", "--num-features", type=int, default=100,
+                        help="total number of features")
     args = parser.parse_args()
 
     loss_fig, loss_ax = plt.subplots(1, 1)
-    loss_ax.set_xlabel("Number of iterations")
+    loss_ax.set_xlabel("Iterations")
     loss_ax.set_ylabel("Utility loss")
 
     time_fig, time_ax = plt.subplots(1, 1)
-    time_ax.set_xlabel("Number of iterations")
+    time_ax.set_xlabel("Iterations")
     time_ax.set_ylabel("Cumulative time (seconds)")
 
     query_fig, query_ax = plt.subplots(1, 1)
-    query_ax.set_xlabel("Number of iterations")
-    query_ax.set_ylabel("Number of critique queries")
+    query_ax.set_xlabel("Iterations")
+    query_ax.set_ylabel("Number of features")
 
     experiment_args, loss_matrices, time_matrices, query_matrices = [], [], [], []
     for path in args.results_path:
@@ -113,7 +123,8 @@ def main():
     _draw_matrices(time_ax, time_matrices, experiment_args, cumulative=True)
     time_fig.savefig(args.png_basename + "_time.png", bbox_inches="tight")
 
-    _draw_matrices(query_ax, query_matrices, experiment_args, mean=True, cumulative=True)
+    _draw_matrices(query_ax, query_matrices, experiment_args, mean=True,
+                   cumulative=True, num_features=args.num_features)
     query_fig.savefig(args.png_basename + "_query.png", bbox_inches="tight")
 
 if __name__ == "__main__":
