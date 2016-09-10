@@ -214,7 +214,7 @@ class Problem(object):
         targets = self.enumerate_features(features)
         if len(targets) >= self.num_features:
             print("Warning: requested critique in full feature space. No dice.")
-            return None
+            return None,
 
         delta = self.phi(x_bar, "all") - self.phi(x, "all")
         scores = (self.w_star * delta).astype(float)
