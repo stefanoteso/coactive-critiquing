@@ -214,7 +214,8 @@ class TravelProblem(Problem):
                 nnz_features = max(1, int(np.ceil(sparsity * num_features)))
                 zeros = rng.permutation(num_features)[nnz_features:]
                 w_star[zeros] = 0
-
+        
+        w_star = np.around(w_star, decimals=3)
         super().__init__(num_attributes, num_base_features, num_features,
                          w_star)
 
