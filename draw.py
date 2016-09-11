@@ -46,7 +46,7 @@ def _draw_matrices(ax, matrices, args, mean=False, cumulative=False,
             perc_feat = 1.0 if arg.method == "pp-all" else arg.perc_feat
             fg = bg = CMAP.to_rgba(1.0 - (perc_feat - 0.2) / 0.8)
             marker = {0.0: "x", 0.2: "v-", 0.4: "^-", 0.6: "<-", 0.8: ">-", 1.0: "D-"}[perc_feat]
-            label = "CL@{}".format(perc_feat)
+            label = "CL {}%".format(int(perc_feat*100))
 
 
         current_max_x = matrix.shape[1]
