@@ -75,8 +75,10 @@ def _draw_matrices(ax, matrices, args, mean=False, cumulative=False,
         ax.plot(x, y, marker, linewidth=2.5, color=fg)
         ax.fill_between(x, y - yerr, y + yerr, alpha=0.5, linewidth=0, color=bg)
 
-    ax.set_xlim([0, max_x + 0.1])
-    ax.set_ylim([0, max_y + 0.1])
+    max_y += 5
+
+    ax.set_xlim([0, max_x])
+    ax.set_ylim([0, max_y])
 
     ax.set_xticks(np.arange(0, max_x, _get_ticks(max_x)))
     ax.set_yticks(np.arange(0, max_y, _get_ticks(max_y)))
