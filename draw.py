@@ -34,10 +34,11 @@ def _draw_matrices(ax, matrices, args, mean=False, cumulative=False,
         new_matrices.append(avg_matrix)
         new_args.append(pf_args[0])
 
-    matrices, args = new_matrices, new_args
+    matrices, args = zip(*sorted(zip(new_matrices, new_args), reverse=True,
+                                 key=lambda matrix_arg: matrix_arg[1].method))
 
     max_x, max_y = None, None
-    for i, (matrix, arg) in enumerate(zip(matrices, args)):
+    for matrix, arg in zip(matrices, args):
         fg, bg, marker = _METHOD_TO_PLOTCONFIG[arg.method]
         if arg.method == "pp-attr":
             fg = "#{:02x}00FF".format(int(arg.perc_feat * 255))
