@@ -4,13 +4,12 @@ import sys
 import pickle
 import numpy as np
 import matplotlib.pyplot as plt
+import matplotlib.colors as colors
+import matplotlib.cm as cm
 from collections import defaultdict
 
-_METHOD_TO_PLOTCONFIG = {
-    "pp-attr":  ("#555753", "#2E3436", "D-"),
-    "pp-all":   ("#CC0000", "#EF2929", "o-"),
-    "cpp":      ("#73D216", "#8AE234", "s-"),
-}
+CMAP = cm.ScalarMappable(cmap=plt.get_cmap("winter"),
+                         norm=colors.Normalize(vmin=0, vmax=1))
 
 def _get_ticks(x):
     return np.ceil(x / 10)
@@ -39,10 +38,13 @@ def _draw_matrices(ax, matrices, args, mean=False, cumulative=False,
 
     max_x, max_y = None, None
     for matrix, arg in zip(matrices, args):
-        fg, bg, marker = _METHOD_TO_PLOTCONFIG[arg.method]
-        if arg.method == "pp-attr":
-            fg = "#{:02x}00FF".format(int(arg.perc_feat * 255))
-            bg = "#{:02x}00FF".format(int(arg.perc_feat * 255))
+        if arg.method == "cpp":
+            fg = bg = "#EF2929"
+            marker = "s-"
+        else:
+            perc_feat = 1.0 if arg.method == "pp-all" else arg.perc_feat
+            fg = bg = CMAP.to_rgba(1.0 - (perc_feat - 0.2) / 0.8)
+            marker = {0.0: "x", 0.2: "v-", 0.4: "^-", 0.6: "<-", 0.8: ">-", 1.0: "D-"}[perc_feat]
 
         current_max_x = matrix.shape[1]
         if max_x is None or current_max_x > max_x:
