@@ -34,7 +34,7 @@ def _draw_matrices(ax, matrices, args, mean=False, cumulative=False,
         new_args.append(pf_args[0])
 
     matrices, args = zip(*sorted(zip(new_matrices, new_args), reverse=True,
-                                 key=lambda matrix_arg: matrix_arg[1].method))
+                                 key=lambda matrix_arg: (matrix_arg[1].method, 1 - matrix_arg[1].perc_feat)))
 
     max_x, max_y = None, None
     for matrix, arg in zip(matrices, args):
