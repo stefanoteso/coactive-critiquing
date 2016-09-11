@@ -41,10 +41,13 @@ def _draw_matrices(ax, matrices, args, mean=False, cumulative=False,
         if arg.method == "cpp":
             fg = bg = "#EF2929"
             marker = "s-"
+            label = "CC"
         else:
             perc_feat = 1.0 if arg.method == "pp-all" else arg.perc_feat
             fg = bg = CMAP.to_rgba(1.0 - (perc_feat - 0.2) / 0.8)
             marker = {0.0: "x", 0.2: "v-", 0.4: "^-", 0.6: "<-", 0.8: ">-", 1.0: "D-"}[perc_feat]
+            label = "CL@{}".format(perc_feat)
+
 
         current_max_x = matrix.shape[1]
         if max_x is None or current_max_x > max_x:
@@ -74,8 +77,11 @@ def _draw_matrices(ax, matrices, args, mean=False, cumulative=False,
         if max_y is None or current_max_y > max_y:
             max_y = current_max_y
 
-        ax.plot(x, y, marker, linewidth=2.5, color=fg)
+        plot = ax.plot(x, y, marker, linewidth=2.5, color=fg, label=label)
         ax.fill_between(x, y - yerr, y + yerr, alpha=0.5, linewidth=0, color=bg)
+
+        handles, labels = ax.get_legend_handles_labels()
+        ax.legend(handles, labels)
 
     max_y += 5
 
