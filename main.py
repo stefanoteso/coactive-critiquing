@@ -34,7 +34,8 @@ METHODS = {
     "cpp":
         lambda args, problem, num_critiques, rng:
             stfb.pp(problem, args.max_iters, "attributes", can_critique=True,
-                    rng=rng, fill_with_ones=args.ones, debug=args.debug),
+                    rng=rng, fill_with_ones=args.ones,
+                    p_critique=args.p_critique, debug=args.debug),
     "drone-cpp":
         lambda args, problem, num_critiques, rng:
             stfb.pp(problem, args.max_iters, "attributes", can_critique=True,
@@ -46,7 +47,8 @@ def _get_experiment_path(args, method=None):
     method = args.method if method is None else method
     name = "_".join(map(str, [
         args.problem, method, args.num_users, args.max_iters,
-        args.noise, args.sparsity, args.perc_feat, args.ones, args.seed]))
+        args.noise, args.sparsity, args.perc_feat, args.ones, args.p_critique,
+        args.seed]))
     return "results_" + name + ".pickle"
 
 def _to_matrix(l, rows=None, cols=None):
@@ -126,6 +128,8 @@ if __name__ == "__main__":
                         help="amplitude of noise for improvement query")
     parser.add_argument("-f", "--perc-feat", type=float, default=0.0,
                         help="percentage of initial features for canvas")
+    parser.add_argument("-p", "--p-critique", type=float, default=None,
+                        help="iteration-wise probability of asking for a critique")
     parser.add_argument("-W", "--weights", type=str, default=None,
                         help="path to pickle file with user weights")
     parser.add_argument("-t", "--travel", type=str, default='10',
