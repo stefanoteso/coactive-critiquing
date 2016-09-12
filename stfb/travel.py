@@ -129,7 +129,7 @@ solve minimize objective;
 
 class TravelProblem(Problem):
     def __init__(self, horizon=10, noise=0.1, sparsity=0.2, rng=None, 
-                 w_star=None, dataset='10'):
+                 w_star=None, dataset='10', perc_feat=0.0):
         rng = check_random_state(rng)
         self.noise, self.rng = noise, rng
 
@@ -207,6 +207,22 @@ class TravelProblem(Problem):
         _TEMPLATE = \
             _TEMPLATE.format(phis="\n".join(self.features), solve="{solve}")
 
+        if perc_feat != 0.0:
+            if w_star is not None:
+                utils = list(zip(self.features[num_base_features:], w_star[num_base_features:]))
+                self.rng.shuffle(utils)
+                utils_features, utils_w_star = list(zip(*utils))
+                features = self.features[:num_base_features] + list(utils_features)
+                w_star = list(w_star)[:num_base_features] + list(utils_w_star)
+                assert len(self.features) == num_features and len(w_star) == num_features
+                w_star = np.array(w_star)
+            else:
+                utils_features = self.features[num_base_features:]
+                self.rng.shuffle(utils_features)
+                features = self.features[:num_base_features] + utils_features
+                assert len(self.features) == num_features
+            num_base_features += int(len(utils_features) * perc_feat)
+
         if w_star is None:
             # Sample the weight vector
             w_star = rng.normal(size=num_features)
@@ -214,7 +230,7 @@ class TravelProblem(Problem):
                 nnz_features = max(1, int(np.ceil(sparsity * num_features)))
                 zeros = rng.permutation(num_features)[nnz_features:]
                 w_star[zeros] = 0
-        
+
         w_star = self._to_int(w_star)
         super().__init__(num_attributes, num_base_features, num_features,
                          w_star)
