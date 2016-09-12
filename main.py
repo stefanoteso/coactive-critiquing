@@ -18,7 +18,8 @@ PROBLEMS = {
     "travel":
         lambda args, rng, w_star:
             stfb.TravelProblem(noise=args.noise, sparsity=args.sparsity,
-                               rng=rng, w_star=w_star),
+                               rng=rng, w_star=w_star, perc_feat=args.perc_feat, 
+                               dataset=args.travel),
 }
 
 METHODS = {
@@ -127,6 +128,8 @@ if __name__ == "__main__":
                         help="percentage of initial features for canvas")
     parser.add_argument("-W", "--weights", type=str, default=None,
                         help="path to pickle file with user weights")
+    parser.add_argument("-t", "--travel", type=str, default='10',
+                        help="travel dataset number (10, 15). Default: 10")
     parser.add_argument("-1", "--ones", action="store_true",
                         help="initialize new weights to 1 rather than to 0")
     parser.add_argument("-s", "--seed", type=int, default=0,
