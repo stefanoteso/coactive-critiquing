@@ -129,14 +129,14 @@ solve minimize objective;
 
 class TravelProblem(Problem):
     def __init__(self, horizon=10, noise=0.1, sparsity=0.2, rng=None, 
-                 w_star=None):
+                 w_star=None, dataset='10'):
         rng = check_random_state(rng)
         self.noise, self.rng = noise, rng
 
         self._horizon = horizon
         num_attributes = 3 * horizon - 1
 
-        with open("datasets/travel_tn.pickle", "rb") as fp:
+        with open("datasets/travel_tn{}.pickle".format(dataset), "rb") as fp:
             dataset = pickle.load(fp)
 
         self._location_activities = dataset["location_activities"]
