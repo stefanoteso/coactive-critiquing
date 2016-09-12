@@ -26,7 +26,7 @@ def is_separable(deltas, d, verbose=False):
 
 
 def pp(problem, max_iters, targets, can_critique=False, num_critiques=None,
-       fill_with_ones=False, rng=None, debug=False):
+       fill_with_ones=False, p_critique=None, rng=None, debug=False):
     """The (Critiquing) Preference Perceptron [1]_.
 
     Contrary to the original algorithm, there is no support for the "context"
@@ -53,6 +53,8 @@ def pp(problem, max_iters, targets, can_critique=False, num_critiques=None,
         query type selection heuristic is used.
     fill_with_ones : bool, defaults to False
         What it says.
+    p_critique : float or None, defaults to None
+        WRITEME
     rng : int or None
         The RNG.
     debug : bool, defaults to False
@@ -123,7 +125,7 @@ def pp(problem, max_iters, targets, can_critique=False, num_critiques=None,
 
         rho = None
         if ask_critique:
-            rho, *_ = problem.query_critique(x, x_bar, targets)
+            rho, *_ = problem.query_critique(x, x_bar, targets, p=p_critique)
             ask_critique = rho is not None
             assert rho is None or rho > 0
 
