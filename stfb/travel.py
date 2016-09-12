@@ -215,7 +215,7 @@ class TravelProblem(Problem):
                 zeros = rng.permutation(num_features)[nnz_features:]
                 w_star[zeros] = 0
         
-        w_star = np.around(w_star, decimals=3)
+        w_star = self._to_int(w_star)
         super().__init__(num_attributes, num_base_features, num_features,
                          w_star)
 
@@ -281,7 +281,7 @@ class TravelProblem(Problem):
         w_star = np.array(self.w_star)
         if self.noise:
             nnz = w_star.nonzero()[0]
-            w_star[nnz] += self.rng.normal(0, self.noise, size=len(nnz)).astype(np.float32)
+            w_star[nnz] += self._to_int(self.rng.normal(0, self.noise, size=len(nnz)).astype(np.float32))
 
         PATH = "travel-improve.mzn"
 
