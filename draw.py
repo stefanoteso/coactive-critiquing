@@ -41,8 +41,15 @@ def _draw_matrices(ax, matrices, args, real_max_y, mean=False, cumulative=False,
         new_matrices.append(avg_matrix)
         new_args.append(pf_args[0])
 
-    matrices, args = zip(*sorted(zip(new_matrices, new_args), reverse=True,
-                                 key=lambda matrix_arg: (matrix_arg[1].method, 1 - matrix_arg[1].perc_feat)))
+    def key(matrix_arg):
+        arg = matrix_arg[1]
+        method = arg.method
+        pf = 1 - arg.perc_feat
+        pc = 1 - arg.p_critique if hasattr(arg, "p_critique") else -1.0
+        return method, pf, pc
+
+    matrices, args = zip(*sorted(zip(new_matrices, new_args), key=key,
+                         reverse=True))
 
     max_x, max_y = None, None
     for matrix, arg in zip(matrices, args):
@@ -50,9 +57,13 @@ def _draw_matrices(ax, matrices, args, real_max_y, mean=False, cumulative=False,
             matrix /= 1000
 
         if arg.method == "cpp":
-            fg = bg = "#EF2929"
+            if hasattr(arg, "p_critique"):
+                fg = bg = CMAP.to_rgba(1.0 - arg.p_critique)
+                label = "CC p={:3.2f}".format(arg.p_critique)
+            else:
+                fg = bg = "#EF2929"
+                label = "CC"
             marker = "s-"
-            label = "CC"
         else:
             perc_feat = 1.0 if arg.method == "pp-all" else arg.perc_feat
             fg = bg = CMAP.to_rgba(1.0 - (perc_feat - 0.2) / 0.8)
