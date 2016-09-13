@@ -191,7 +191,7 @@ class Problem(object):
 
         return x_bar
 
-    def query_critique(self, x, x_bar, features, p=None):
+    def query_critique(self, x, x_bar, features):
         """Searches for the maximum utility feature.
 
         Parameters
@@ -202,8 +202,6 @@ class Problem(object):
             The improved configuration.
         features : list or "all" or "attributes"
             The features to be used in the computation.
-        p : float or None, defaults to None
-            If not None, decision is sampled from a binomial of parameter p.
 
         Returns
         -------
@@ -212,10 +210,6 @@ class Problem(object):
         """
         assert x.shape == (self.num_attributes,)
         assert x_bar.shape == (self.num_attributes,)
-
-        if p is not None:
-            assert 0 <= p <= 1
-            return self.rng.binomial(1, p), 0
 
         targets = self.enumerate_features(features)
         if len(targets) >= self.num_features:
