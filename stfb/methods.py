@@ -120,12 +120,17 @@ def pp(problem, max_iters, targets, can_critique=False, num_critiques=None,
             break
 
         d = delta((x_bar, x), targets)
-        ask_critique = can_critique and not is_separable(deltas, d)
+        ask_critique = False
+        if can_critique:
+            if p_critique is None:
+                ask_critique = not is_separable(deltas, d)
+            else:
+                ask_critique = rng.binomial(1, p_critique)
         t1 = time() - t1
 
         rho = None
         if ask_critique:
-            rho, *_ = problem.query_critique(x, x_bar, targets, p=p_critique)
+            rho, *_ = problem.query_critique(x, x_bar, targets)
             ask_critique = rho is not None
             assert rho is None or rho > 0
 
