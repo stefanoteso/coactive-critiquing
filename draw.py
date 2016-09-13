@@ -14,7 +14,14 @@ CMAP = cm.ScalarMappable(cmap=plt.get_cmap("winter"),
 def _get_ticks(x):
     return np.ceil(x / 10)
 
-def _draw_matrices(ax, matrices, args, mean=False, cumulative=False,
+def _pad(m, nrows):
+    new_m = []
+    for row in m:
+        assert row.shape[0] <= nrows
+        new_m.append(np.hstack((row, np.zeros(nrows - row.shape[0]))))
+    return np.array(new_m, dtype=m.dtype)
+
+def _draw_matrices(ax, matrices, args, real_max_y, mean=False, cumulative=False,
                    num_features=None):
 
     new_matrices, new_args = [], []
@@ -29,6 +36,7 @@ def _draw_matrices(ax, matrices, args, mean=False, cumulative=False,
 
     for pf, matrices_args in pf_to_matrices_args.items():
         pf_matrices, pf_args = zip(*matrices_args)
+        pf_matrices = [_pad(matrix, 100) for matrix in pf_matrices]
         avg_matrix = sum(pf_matrices) / len(pf_matrices)
         new_matrices.append(avg_matrix)
         new_args.append(pf_args[0])
@@ -38,6 +46,9 @@ def _draw_matrices(ax, matrices, args, mean=False, cumulative=False,
 
     max_x, max_y = None, None
     for matrix, arg in zip(matrices, args):
+        if matrix.max() >= 1000:
+            matrix /= 1000
+
         if arg.method == "cpp":
             fg = bg = "#EF2929"
             marker = "s-"
@@ -45,7 +56,7 @@ def _draw_matrices(ax, matrices, args, mean=False, cumulative=False,
         else:
             perc_feat = 1.0 if arg.method == "pp-all" else arg.perc_feat
             fg = bg = CMAP.to_rgba(1.0 - (perc_feat - 0.2) / 0.8)
-            marker = {0.0: "x", 0.2: "v-", 0.4: "^-", 0.6: "<-", 0.8: ">-", 1.0: "D-"}[perc_feat]
+            marker = {0.0: "x-", 0.2: "v-", 0.4: "^-", 0.6: "<-", 0.8: ">-", 1.0: "D-"}[perc_feat]
             label = "CL {}%".format(int(perc_feat*100))
 
 
@@ -78,18 +89,18 @@ def _draw_matrices(ax, matrices, args, mean=False, cumulative=False,
             max_y = current_max_y
 
         plot = ax.plot(x, y, marker, linewidth=2.5, color=fg, label=label)
-        ax.fill_between(x, y - yerr, y + yerr, alpha=0.5, linewidth=0, color=bg)
+        ax.fill_between(x, y - yerr, y + yerr, alpha=0.25, linewidth=0, color=bg)
 
         handles, labels = ax.get_legend_handles_labels()
         ax.legend(handles, labels)
 
     max_y += 5
 
-    ax.set_xlim([0, max_x])
-    ax.set_ylim([0, max_y])
+    ax.set_xlim([0, 80])
+    ax.set_ylim([0, real_max_y])
 
-    ax.set_xticks(np.arange(0, max_x, _get_ticks(max_x)))
-    ax.set_yticks(np.arange(0, max_y, _get_ticks(max_y)))
+    ax.set_xticks(np.arange(0, 80, 10))
+    ax.set_yticks(np.arange(0, real_max_y, _get_ticks(real_max_y)))
 
 def main():
     import argparse
@@ -99,6 +110,8 @@ def main():
                         help="plot path")
     parser.add_argument("results_path", type=str, nargs="+",
                         help="list of result files to plot")
+    parser.add_argument("-l", "--max-loss", type=int, default=100,
+                        help="I DONT GIVE A CRAP ANYMORE")
     parser.add_argument("-m", "--num-features", type=int, default=100,
                         help="total number of features")
     args = parser.parse_args()
@@ -127,13 +140,10 @@ def main():
                time_matrices[-1].shape == \
                query_matrices[-1].shape
 
-    _draw_matrices(loss_ax, loss_matrices, experiment_args)
+    _draw_matrices(loss_ax, loss_matrices, experiment_args, args.max_loss)
     loss_fig.savefig(args.png_basename + "_loss.png", bbox_inches="tight")
 
-    _draw_matrices(time_ax, time_matrices, experiment_args, cumulative=True)
-    time_fig.savefig(args.png_basename + "_time.png", bbox_inches="tight")
-
-    _draw_matrices(query_ax, query_matrices, experiment_args, mean=True,
+    _draw_matrices(query_ax, query_matrices, experiment_args, args.num_features+5, mean=True,
                    cumulative=True, num_features=args.num_features)
     query_fig.savefig(args.png_basename + "_query.png", bbox_inches="tight")
 
