@@ -60,10 +60,11 @@ def _draw_matrices(ax, matrices, args, real_max_y, mean=False, cumulative=False,
             if hasattr(arg, "p_critique"):
                 fg = bg = CMAP.to_rgba(1.0 - arg.p_critique)
                 label = "CC p={:3.2f}".format(arg.p_critique)
+                marker = {0.25: "^-", 0.5: "<-", 0.75: ">-", 1.0: "D-"}[arg.p_critique]
             else:
                 fg = bg = "#EF2929"
                 label = "CC"
-            marker = "s-"
+                marker = "s-"
         else:
             perc_feat = 1.0 if arg.method == "pp-all" else arg.perc_feat
             fg = bg = CMAP.to_rgba(1.0 - (perc_feat - 0.2) / 0.8)
@@ -137,7 +138,7 @@ def main():
 
     query_fig, query_ax = plt.subplots(1, 1)
     query_ax.set_xlabel("Iterations")
-    query_ax.set_ylabel("Number of features")
+    query_ax.set_ylabel("Acquired features")
 
     experiment_args, loss_matrices, time_matrices, query_matrices = [], [], [], []
     for path in args.results_path:
