@@ -9,7 +9,7 @@ critiquing interaction.
 Please see our paper:
 
     Stefano Teso, Paolo Dragone, Andrea Passerini. "Coactive Critiquing:
-    Elicitation of Preferences and Features', accepted at AAAI'17, 2017.
+    Elicitation of Preferences and Features", accepted at AAAI'17, 2017.
 
 ## Requirements
 
