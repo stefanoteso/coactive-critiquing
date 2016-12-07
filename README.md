@@ -6,10 +6,9 @@ A python3 implementation of Coactive Critiquing for preference elicitation.
 Coactive critiquing extends coactive learning with support for example
 critiquing interaction.
 
-Please see our paper:
+Please see [our paper](http://arxiv.org/abs/1612.01941):
 
-    Stefano Teso, Paolo Dragone, Andrea Passerini. "Coactive Critiquing:
-    Elicitation of Preferences and Features", accepted at AAAI'17, 2017.
+    Stefano Teso, Paolo Dragone, Andrea Passerini. "Coactive Critiquing: Elicitation of Preferences and Features", accepted at AAAI'17, 2017.
 
 ## Requirements
 
